@@ -182,6 +182,30 @@ class ProfileAndSidebarTest extends TestCase
 
     // ── Collapsible sidebar ─────────────────────────────────────────────
 
+    /** The account block sits in the sidebar header and opens the profile. */
+    public function test_the_sidebar_account_block_links_to_the_profile(): void
+    {
+        $user = $this->account('admin');
+        $html = $this->actingAs($user)->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<a href="[^"]*\/profile"[^>]*class="sb-user/',
+            $html,
+            'The account block must be a link to the profile.'
+        );
+        // It belongs above the navigation, not in the footer.
+        $this->assertLessThan(strpos($html, 'class="sb-nav"'), strpos($html, 'class="sb-user'));
+    }
+
+    /** Collapsed to a rail there is no room for a word, so the toggle is icon-only. */
+    public function test_the_collapse_toggle_is_icon_only_and_still_labelled(): void
+    {
+        $html = $this->actingAs($this->account('admin'))->get(route('dashboard'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('sb-collapse-label', $html);
+        $this->assertStringContainsString('aria-label="Collapse sidebar"', $html);
+    }
+
     public function test_the_sidebar_offers_a_collapse_toggle(): void
     {
         $html = $this->actingAs($this->account('admin'))->get(route('dashboard'))->assertOk()->getContent();

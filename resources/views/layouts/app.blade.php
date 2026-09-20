@@ -24,17 +24,31 @@ try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.cl
     <div class="sb-top">
         <div class="sb-brand">
             <div class="sb-brand-seal"><img src="{{ $__posoSeal }}" alt="Municipal Seal"></div>
-            <div>
+            <div class="sb-brand-text">
                 <div class="sb-brand-name">POSO</div>
                 <div class="sb-brand-sub">Management Portal</div>
             </div>
+            <button type="button" class="sb-collapse-btn" id="sidebarCollapseBtn"
+                    aria-controls="sidebar" aria-expanded="true"
+                    title="Collapse sidebar" aria-label="Collapse sidebar">
+                <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+            </button>
         </div>
         <p class="sb-location">Municipality of Luna, Apayao</p>
-        <button type="button" class="sb-collapse-btn" id="sidebarCollapseBtn"
-                aria-controls="sidebar" aria-expanded="true" title="Collapse sidebar">
-            <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
-            <span class="sb-collapse-label">Collapse</span>
-        </button>
+        @php
+            $parts    = explode(' ', auth()->user()->name);
+            $initials = strtoupper(substr($parts[0],0,1)) . (isset($parts[1]) ? strtoupper(substr($parts[1],0,1)) : '');
+            $avColors = ['admin'=>['#E9F0F9','#0F3D73'],'enforcer'=>['#FBF3E1','#B8862E']];
+            $av = $avColors[auth()->user()->role] ?? ['#E9F0F9','#0F3D73'];
+        @endphp
+        <a href="{{ route('profile.edit') }}" class="sb-user {{ request()->routeIs('profile.*') ? 'active' : '' }}"
+           title="{{ auth()->user()->name }} — my profile">
+            <div class="sb-av" style="background:{{ $av[0] }};color:{{ $av[1] }}">{{ $initials }}</div>
+            <div class="sb-user-text">
+                <div class="sb-uname">{{ auth()->user()->name }}</div>
+                <div class="sb-urole">{{ ucfirst(auth()->user()->role) }}</div>
+            </div>
+        </a>
     </div>
 
     <div class="sb-nav">
@@ -76,19 +90,6 @@ try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.cl
     </div>
 
     <div class="sb-footer">
-        @php
-            $parts    = explode(' ', auth()->user()->name);
-            $initials = strtoupper(substr($parts[0],0,1)) . (isset($parts[1]) ? strtoupper(substr($parts[1],0,1)) : '');
-            $avColors = ['admin'=>['#E9F0F9','#0F3D73'],'enforcer'=>['#FBF3E1','#B8862E']];
-            $av = $avColors[auth()->user()->role] ?? ['#E9F0F9','#0F3D73'];
-        @endphp
-        <div class="sb-user">
-            <div class="sb-av" style="background:{{ $av[0] }};color:{{ $av[1] }}">{{ $initials }}</div>
-            <div>
-                <div class="sb-uname">{{ auth()->user()->name }}</div>
-                <div class="sb-urole">{{ ucfirst(auth()->user()->role) }}</div>
-            </div>
-        </div>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="sb-signout" title="Sign out">

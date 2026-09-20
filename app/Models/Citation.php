@@ -42,6 +42,16 @@ class Citation extends Model
         return $query->payable()->unverified()->where('due_date', '<', today()->toDateString());
     }
 
+    /**
+     * Unverified settlements that can be verified right now. The complement of
+     * needs-review within the unverified set, so the two partition cleanly
+     * instead of one counting the other twice.
+     */
+    public function scopeReadyToVerify($query)
+    {
+        return $query->payable()->unverified()->whereNotNull('fine_amount');
+    }
+
     // Settlements an admin still has to act on: past the due date without a
     // verified receipt, or blocked because the ordinance fine was never
     // configured. A record can be both; callers treat a missing fine as the

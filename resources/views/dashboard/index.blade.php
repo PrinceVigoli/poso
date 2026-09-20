@@ -5,7 +5,7 @@
     <div><h1>Dashboard</h1><p>An overview of apprehensions and Treasury payment verification.</p></div>
     @if(auth()->user()->isEnforcer())<a href="{{ route('violations.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Record Violation</a>@endif
 </div>
-<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-primary" href="{{ route('violations.index', ['payment_status' => 'unpaid']) }}">Awaiting verification ({{ $stats['pending_citations'] }})</a><a class="btn btn-outline-secondary" href="{{ route('violations.index', ['payment_status' => 'needs_review']) }}">Amount needs review ({{ $stats['needs_review'] }})</a></div>
+<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-primary" href="{{ route('violations.index', ['payment_status' => 'ready']) }}">Ready to verify ({{ $stats['ready_to_verify'] }})</a><a class="btn btn-outline-secondary" href="{{ route('violations.index', ['payment_status' => 'needs_review']) }}">Amount needs review ({{ $stats['needs_review'] }})</a></div>
 @if($stats['overdue_citations'] > 0)
 <div class="attention-banner" role="status">
     <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>

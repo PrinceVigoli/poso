@@ -116,6 +116,46 @@ class ReviewFixesTest extends TestCase
         $this->assertSame($version, $citation->fresh()->verification_version, 'A double submit must not re-verify.');
     }
 
+    // ── Dashboard queues ────────────────────────────────────────────────
+
+    /**
+     * needs_review used to be a subset of the "awaiting verification" count,
+     * so the two dashboard buttons double-counted the same records. They must
+     * partition the unverified set instead.
+     */
+    public function test_the_two_dashboard_queues_do_not_count_the_same_record_twice(): void
+    {
+        $this->person('Ready Person', ['pending', 'pending']);
+        $blocked = $this->person('Blocked Person', ['pending']);
+        $blocked->violations()->first()->citation->update(['fine_amount' => null]);
+
+        $this->actingAs($this->account('admin'))->get(route('dashboard'))->assertOk()
+            ->assertViewHas('stats', function ($stats) {
+                return $stats['ready_to_verify'] === 2
+                    && $stats['needs_review'] === 1
+                    // The parts must add up to the whole.
+                    && $stats['ready_to_verify'] + $stats['needs_review'] === $stats['pending_citations'];
+            });
+    }
+
+    public function test_each_queue_filter_returns_only_its_own_records(): void
+    {
+        $this->person('Ready Person', ['pending']);
+        $blocked = $this->person('Blocked Person', ['pending']);
+        $blocked->violations()->first()->citation->update(['fine_amount' => null]);
+        $this->actingAs($this->account('admin'));
+
+        // Scoped to the list: the topbar notification panel legitimately names
+        // blocked records on every admin page.
+        $named = fn (string $name) => fn ($rows) => $rows->pluck('person_snapshot.full_name')->all() === [$name];
+
+        $this->get(route('violations.index', ['payment_status' => 'ready']))
+            ->assertOk()->assertViewHas('violations', $named('Ready Person'));
+
+        $this->get(route('violations.index', ['payment_status' => 'needs_review']))
+            ->assertOk()->assertViewHas('violations', $named('Blocked Person'));
+    }
+
     // ── Login ───────────────────────────────────────────────────────────
 
     /** A junk password used to reveal which usernames existed. */

@@ -23,6 +23,7 @@ class DashboardController extends Controller
             'pending_citations'  => Citation::payable()->whereIn('payment_status', ['pending', 'overdue'])->count(),
             'overdue_citations'  => Citation::overdue()->count(),
             'needs_review' => Citation::payable()->unverified()->whereNull('fine_amount')->count(),
+            'ready_to_verify' => Citation::readyToVerify()->count(),
             'paid_records'       => Citation::payable()->where('payment_status', 'paid')->count(),
         ];
 

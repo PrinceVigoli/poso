@@ -18,7 +18,7 @@ class ViolationController extends Controller
     {
         $request->validate([
             'search' => 'nullable|string|max:255', 'status' => 'nullable|in:pending,settled,dismissed',
-            'payment_status' => 'nullable|in:unpaid,paid,overdue,needs_review',
+            'payment_status' => 'nullable|in:unpaid,ready,paid,overdue,needs_review',
             'type' => 'nullable|integer', 'date_from' => 'nullable|date_format:Y-m-d',
             'date_to' => array_filter(['nullable', 'date_format:Y-m-d', $request->filled('date_from') ? 'after_or_equal:date_from' : null]),
         ]);
@@ -26,6 +26,7 @@ class ViolationController extends Controller
         if ($request->filled('payment_status')) {
             $query->payable()->whereHas('citation', fn ($q) => match ($request->payment_status) {
                 'unpaid' => $q->unverified(),
+                'ready' => $q->readyToVerify(),
                 'overdue' => $q->overdue(),
                 'needs_review' => $q->unverified()->whereNull('fine_amount'),
                 default => $q->where('payment_status', 'paid'),
