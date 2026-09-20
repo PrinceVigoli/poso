@@ -156,6 +156,32 @@ class ReviewFixesTest extends TestCase
             ->assertOk()->assertViewHas('violations', $named('Blocked Person'));
     }
 
+    // ── Reports ─────────────────────────────────────────────────────────
+
+    /** The old index page only linked to a screen that selects its own period. */
+    public function test_the_reports_link_goes_straight_to_the_report(): void
+    {
+        $this->actingAs($this->account('admin'))
+            ->get(route('reports.index'))->assertRedirect(route('reports.period'));
+    }
+
+    public function test_the_report_screen_selects_its_own_period(): void
+    {
+        $this->actingAs($this->account('admin'));
+
+        foreach (['daily', 'weekly', 'monthly'] as $period) {
+            $this->get(route('reports.period', ['period' => $period]))->assertOk()
+                ->assertViewHas('period', $period)
+                ->assertSee('Report period');
+        }
+    }
+
+    public function test_the_report_screen_defaults_to_daily(): void
+    {
+        $this->actingAs($this->account('admin'))->get(route('reports.period'))->assertOk()
+            ->assertViewHas('period', 'daily');
+    }
+
     // ── Login ───────────────────────────────────────────────────────────
 
     /** A junk password used to reveal which usernames existed. */

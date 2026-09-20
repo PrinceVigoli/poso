@@ -7,7 +7,10 @@ use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
-    public function index() { return view('reports.index'); }
+    // The report screen carries its own period selector and date picker, so a
+    // separate page offering three links to it was an extra click for nothing.
+    // Kept as a redirect so existing links and bookmarks still resolve.
+    public function index() { return redirect()->route('reports.period'); }
 
     // Preserve old links, but use the same restricted daily/weekly/monthly report.
     public function violations(Request $request) { return $this->period($request); }

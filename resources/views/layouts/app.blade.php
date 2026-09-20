@@ -70,7 +70,7 @@ try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.cl
             </a>
             
             @if(auth()->user()->isAdmin())
-            <a href="{{ route('reports.index') }}" class="sb-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reports">
+            <a href="{{ route('reports.period') }}" class="sb-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reports">
                 <i class="bi bi-bar-chart-line"></i> Reports
             </a>
             @endif
@@ -151,7 +151,7 @@ try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.cl
                         <div style="border-top:1px solid #EAEEF2;margin:4px 0"></div>
                         @endif
                         @if(auth()->user()->isAdmin())
-                        <a href="{{ route('reports.index') }}" class="gear-item"><i class="bi bi-bar-chart-line"></i> Reports</a>
+                        <a href="{{ route('reports.period') }}" class="gear-item"><i class="bi bi-bar-chart-line"></i> Reports</a>
                         <div style="border-top:1px solid #EAEEF2;margin:4px 0"></div>
                         @endif
                         <a href="{{ route('profile.edit') }}" class="gear-item"><i class="bi bi-person-circle"></i> My Profile</a>

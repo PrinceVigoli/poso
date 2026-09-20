@@ -36,7 +36,7 @@
         <section class="card h-100" aria-labelledby="weekly-heading">
             <div class="sec-hd border-0">
                 <div><h2 class="card-ttl" id="weekly-heading">Violations this week</h2><div class="chart-subtitle">{{ today()->subDays(6)->format('M j') }} &ndash; {{ today()->format('M j, Y') }}</div></div>
-                @if(auth()->user()->isAdmin())<a href="{{ route('reports.index') }}" class="text-decoration-none small">Reports <i class="bi bi-arrow-up-right"></i></a>@endif
+                @if(auth()->user()->isAdmin())<a href="{{ route('reports.period') }}" class="text-decoration-none small">Reports <i class="bi bi-arrow-up-right"></i></a>@endif
             </div>
             <div class="px-4 pb-4">
                 <div class="week-chart" role="img" aria-label="Daily violation counts: {{ $weekly->map(fn ($count, $date) => \Carbon\Carbon::parse($date)->format('M j').': '.$count)->implode('; ') }}">
@@ -55,7 +55,7 @@
             <div class="shortcut-list">
                 <a href="{{ route('violators.index') }}" class="shortcut"><i class="bi bi-person"></i><span><strong>Active Violators ({{ $stats['active_violators'] }})</strong><small>Review unverified settlements</small></span><i class="bi bi-chevron-right"></i></a>
                 <a href="{{ route('violators.index', ['status' => 'archived']) }}" class="shortcut"><i class="bi bi-archive"></i><span><strong>Archived Violators ({{ $stats['archived_violators'] }})</strong><small>View retained violation history</small></span><i class="bi bi-chevron-right"></i></a>
-                @if(auth()->user()->isAdmin())<a href="{{ route('reports.index') }}" class="shortcut"><i class="bi bi-file-earmark-bar-graph"></i><span><strong>Generate reports</strong><small>Daily, weekly and monthly reports</small></span><i class="bi bi-chevron-right"></i></a>@endif
+                @if(auth()->user()->isAdmin())<a href="{{ route('reports.period') }}" class="shortcut"><i class="bi bi-file-earmark-bar-graph"></i><span><strong>Generate reports</strong><small>Daily, weekly and monthly reports</small></span><i class="bi bi-chevron-right"></i></a>@endif
             </div>
         </section>
     </div>
