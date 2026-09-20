@@ -13,6 +13,10 @@
     @stack('styles')
 </head>
 <body>
+<script>
+// Runs before paint: a collapsed sidebar must not flash open on every load.
+try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.classList.add('sb-collapsed'); } catch (e) {}
+</script>
 
 <a class="skip-link" href="#workspace-content">Skip to content</a>
 
@@ -26,41 +30,46 @@
             </div>
         </div>
         <p class="sb-location">Municipality of Luna, Apayao</p>
+        <button type="button" class="sb-collapse-btn" id="sidebarCollapseBtn"
+                aria-controls="sidebar" aria-expanded="true" title="Collapse sidebar">
+            <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+            <span class="sb-collapse-label">Collapse</span>
+        </button>
     </div>
 
     <div class="sb-nav">
         @if(auth()->user()->isEnforcer())
             <div class="sb-sec">Main Menu</div>
-            <a href="{{ route('enforcer.create') }}" class="sb-link {{ request()->routeIs('violations.*', 'enforcer.*') ? 'active' : '' }}">
+            <a href="{{ route('enforcer.create') }}" class="sb-link {{ request()->routeIs('violations.*', 'enforcer.*') ? 'active' : '' }}" title="Record Violator">
                 <i class="bi bi-ticket-perforated"></i> Record Violator
             </a>
         @else
             <div class="sb-sec">Main Menu</div>
-            <a href="{{ route('dashboard') }}" class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="Dashboard">
                 <i class="bi bi-grid-1x2"></i> Dashboard
             </a>
-            <a href="{{ route('violators.index') }}" class="sb-link {{ request()->routeIs('violators.*') ? 'active' : '' }}">
+            <a href="{{ route('violators.index') }}" class="sb-link {{ request()->routeIs('violators.*') ? 'active' : '' }}" title="Violators">
                 <i class="bi bi-people"></i> Violators
             </a>
-            <a href="{{ route('violations.index') }}" class="sb-link {{ request()->routeIs('violations.*') ? 'active' : '' }}">
+            <a href="{{ route('violations.index') }}" class="sb-link {{ request()->routeIs('violations.*') ? 'active' : '' }}" title="Violations">
                 <i class="bi bi-exclamation-octagon"></i> Violations
             </a>
             
             @if(auth()->user()->isAdmin())
-            <a href="{{ route('reports.index') }}" class="sb-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+            <a href="{{ route('reports.index') }}" class="sb-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reports">
                 <i class="bi bi-bar-chart-line"></i> Reports
             </a>
             @endif
         @endif
         @if(auth()->user()->isAdmin())
         <div class="sb-sec">Administration</div>
-        <a href="{{ route('admin.users') }}" class="sb-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
+        <a href="{{ route('admin.users') }}" class="sb-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}" title="User Management">
             <i class="bi bi-person-badge"></i> User Management
         </a>
-        <a href="{{ route('admin.violation-types') }}" class="sb-link {{ request()->routeIs('admin.violation-types*') ? 'active' : '' }}">
+        <a href="{{ route('admin.violation-types') }}" class="sb-link {{ request()->routeIs('admin.violation-types*') ? 'active' : '' }}" title="Offense Types">
             <i class="bi bi-list-check"></i> Offense Types
         </a>
-        <a href="{{ route('admin.audit-logs') }}" class="sb-link {{ request()->routeIs('admin.audit-logs*') ? 'active' : '' }}">
+        <a href="{{ route('admin.audit-logs') }}" class="sb-link {{ request()->routeIs('admin.audit-logs*') ? 'active' : '' }}" title="Audit Logs">
             <i class="bi bi-clock-history"></i> Audit Logs
         </a>
         @endif
@@ -82,8 +91,8 @@
         </div>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="sb-signout">
-                <i class="bi bi-box-arrow-right"></i> Sign out
+            <button type="submit" class="sb-signout" title="Sign out">
+                <i class="bi bi-box-arrow-right"></i> <span class="sb-signout-label">Sign out</span>
             </button>
         </form>
     </div>
@@ -144,6 +153,8 @@
                         <a href="{{ route('reports.index') }}" class="gear-item"><i class="bi bi-bar-chart-line"></i> Reports</a>
                         <div style="border-top:1px solid #EAEEF2;margin:4px 0"></div>
                         @endif
+                        <a href="{{ route('profile.edit') }}" class="gear-item"><i class="bi bi-person-circle"></i> My Profile</a>
+                        <div style="border-top:1px solid #EAEEF2;margin:4px 0"></div>
                         <div class="gear-item" style="cursor:default;pointer-events:none;opacity:.5"><i class="bi bi-info-circle"></i> POSO Portal v1.0</div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -198,6 +209,24 @@
 @stack('scripts')
 
 <script>
+// Desktop sidebar collapse. Remembered per browser; the pre-paint script in
+// <body> applies the stored choice before anything renders.
+const collapseBtn = document.getElementById('sidebarCollapseBtn');
+if (collapseBtn) {
+    const sync = () => {
+        const collapsed = document.body.classList.contains('sb-collapsed');
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        collapseBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        collapseBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    };
+    sync();
+    collapseBtn.addEventListener('click', function () {
+        const collapsed = document.body.classList.toggle('sb-collapsed');
+        try { localStorage.setItem('poso.sidebar', collapsed ? 'collapsed' : 'expanded'); } catch (e) {}
+        sync();
+    });
+}
+
 // Notification panel toggle. The bell never navigates on its own — it opens
 // this panel, and the rows inside it are the links to individual records.
 const notifBtn   = document.getElementById('notifBtn');

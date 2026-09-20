@@ -9,6 +9,7 @@ use App\Http\Controllers\CitationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\ProfileController;
 
 // ── Public ────────────────────────────────────────────────────
 // Register the citizen host before routes that also work on localhost.
@@ -33,6 +34,10 @@ Route::middleware('throttle:20,1')->group(function () {
 
 // ── Authenticated (all roles) ─────────────────────────────────
 Route::middleware(['auth'])->group(function () {
+    // Every staff member manages their own name and password.
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
     // Admins monitor records and verify Treasury payments.
     // Enforcers submit records through the preview and confirmation flow.
     Route::middleware('role:admin')->group(function () {

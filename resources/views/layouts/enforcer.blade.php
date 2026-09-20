@@ -24,7 +24,7 @@
         </div>
     </header>
     <main id="enforcer-content" class="enforcer-content" tabindex="-1">
-        <nav class="d-flex gap-3 mb-4" aria-label="Enforcer navigation"><a href="{{ route('enforcer.create') }}">Record violation</a><a href="{{ route('enforcer.index') }}">My submissions</a></nav>
+        <nav class="d-flex gap-3 mb-4" aria-label="Enforcer navigation"><a href="{{ route('enforcer.create') }}">Record violation</a><a href="{{ route('enforcer.index') }}">My submissions</a><a href="{{ route('profile.edit') }}">My profile</a></nav>
         @unless(request()->routeIs('enforcer.index'))@include('violations._enforcer_steps')@endunless
         <div class="enforcer-heading">
             <p class="enforcer-account"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>{{ auth()->user()->name }} &middot; Enforcer</p>
