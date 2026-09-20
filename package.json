@@ -1,0 +1,8 @@
+{
+  "name": "poso-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/check-assets.mjs"
+  }
+}

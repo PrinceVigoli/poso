@@ -1,0 +1,53 @@
+:root { --page: #f6f8fc; --navy-800: #235cd5; --text-3: #64748b; }
+.enforcer-steps { display: flex; list-style: none; padding: 0 0 22px; margin: 0 0 24px; border-bottom: 1px solid #dce2eb; justify-content: space-between; gap: 10px; }
+.enforcer-steps li { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; }
+.enforcer-steps li span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; border: 1px solid #a5afbe; }
+.enforcer-steps li.is-current { color: #235cd5; font-weight: 600; }
+.enforcer-steps li.is-current span { background: #235cd5; border-color: #235cd5; color: white; }
+.enforcer-page .card { border-radius: 9px; }
+.enforcer-page dl.row { border: 1px solid #dce2eb; border-radius: 8px; padding: 18px 16px 0; margin-left: 0; margin-right: 0; }
+.submission-success { text-align: center; padding: 14px 0 22px; }
+.submission-success > i { display: grid; place-items: center; background: #199654; color: white; width: 64px; height: 64px; font-size: 32px; border-radius: 50%; margin: 0 auto 20px; }
+.submission-success h2 { font-size: 24px; font-weight: 600; }
+.submission-success p { color: #60718b; font-size: 13px; }
+.submission-details { border: 1px solid #dce2eb; border-radius: 9px; padding: 8px 20px 20px; }
+.enforcer-page { margin: 0; font-size: 14px; min-height: 100dvh; display: flex; flex-direction: column; }
+.enforcer-header { background: #071e40; color: white; }
+.enforcer-header-inner { max-width: 900px; margin: auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.enforcer-brand { display: flex; align-items: center; gap: 12px; }
+.enforcer-brand img { border-radius: 50%; }
+.enforcer-brand strong { display: block; font-size: 18px; font-weight: 600; }
+.enforcer-brand small { display: block; color: #bfd0ec; font-size: 11px; margin-top: 3px; }
+.enforcer-signout { background: transparent; border: 1px solid #5d7392; border-radius: 8px; color: white; padding: 9px 12px; font-size: 12px; white-space: nowrap; }
+.enforcer-signout:hover { background: #16345d; }
+.enforcer-content { max-width: 808px; width: 100%; margin: 0 auto; padding: 30px 24px; flex: 1; }
+.enforcer-heading { margin-bottom: 22px; }
+.enforcer-heading h1 { font-size: clamp(23px, 4vw, 30px); font-weight: 700; letter-spacing: -.6px; margin: 0; }
+.enforcer-account { font-size: 12px; color: #536580; margin-bottom: 10px; overflow-wrap: anywhere; }
+.enforcer-content > .card { width: 100%; max-width: none !important; box-shadow: 0 3px 12px #123b8006; }
+.enforcer-page .form-control, .enforcer-page .form-select { min-height: 44px; font-size: 16px; }
+.enforcer-page .form-label { font-size: 13px; }
+.enforcer-page .form-text { font-size: 12px; }
+.enforcer-page .btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
+.enforcer-page .form-check-input { width: 20px; height: 20px; }
+.enforcer-page .form-check-label { padding-left: 6px; line-height: 1.6; }
+.enforcer-page .table { table-layout: fixed; }
+.enforcer-page .table td { overflow-wrap: anywhere; }
+.enforcer-footer { padding: 12px 20px 24px; text-align: center; font-size: 11px; color: #61738e; }
+.enforcer-skip { position: fixed; top: -80px; left: 15px; background: white; padding: 12px; z-index: 100; }
+.enforcer-skip:focus { top: 12px; }
+.enforcer-page a:focus-visible, .enforcer-page button:focus-visible { outline: 3px solid #558de7; outline-offset: 3px; }
+.submission-details { margin: 0; }
+.submission-details dt { color: #52617a; font-size: 12px; margin-top: 16px; }
+.submission-details dd { margin: 5px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 575px) {
+    .enforcer-header-inner { padding: 16px; gap: 10px; }
+    .enforcer-brand { gap: 8px; }
+    .enforcer-brand strong { font-size: 16px; }
+    .enforcer-brand small { font-size: 10px; }
+    .enforcer-brand img { width: 34px; height: 34px; }
+    .enforcer-content { padding: 24px 16px; }
+    .enforcer-content > .card.p-4 { padding: 20px !important; }
+    .enforcer-content form .d-flex > .btn { width: 100%; }
+}
+@media print { .enforcer-header, .enforcer-footer { display: none; } .enforcer-content { max-width: none; padding: 0; } }

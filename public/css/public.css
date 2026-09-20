@@ -1,0 +1,64 @@
+.public-page { min-height: 100dvh; display: flex; flex-direction: column; background: #f6f8fc; }
+.public-header { background: #071e40; color: #fff; }
+.public-header-inner { max-width: 1200px; margin: auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.public-brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.public-brand img { width: 40px; height: 40px; border-radius: 50%; }
+.public-brand strong { font-size: 17px; font-weight: 600; }
+.public-brand small { display: block; font-size: 11px; margin-top: 2px; color: #c3d0e5; }
+.public-header a.header-link { color: #fff; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.public-content { max-width: 1100px; margin: 0 auto; padding: 40px 24px; width: 100%; flex: 1; }
+.public-footer { padding: 22px; text-align: center; color: #60718b; font-size: 12px; }
+.login-page .public-header { background: #fff; border-bottom: 1px solid #dce2eb; color: #10213e; }
+.login-page .public-brand small { color: #61738d; }
+.login-page .public-header a.header-link { color: #235cd5; }
+.login-grid { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 80px; min-height: 65vh; }
+.login-intro h1 { font-size: clamp(30px, 4vw, 48px); letter-spacing: -1.6px; line-height: 1.13; font-weight: 700; margin-bottom: 22px; }
+.login-intro p { font-size: 17px; color: #53657f; line-height: 1.8; }
+.login-intro .login-note { font-size: 13px; margin-top: 36px; max-width: 350px; }
+.login-rule { width: 44px; height: 3px; background: #235cd5; margin-top: 25px; }
+.login-card { padding: 36px; }
+.login-card h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+.login-card .form-control { height: 46px; }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 48px; }
+.password-toggle { position: absolute; right: 4px; top: 4px; height: 38px; width: 38px; border: none; background: transparent; color: #52617a; border-radius: 6px; }
+.citizen-hero { text-align: center; padding: 22px 0 28px; }
+.citizen-hero h1 { font-size: clamp(25px, 4vw, 36px); letter-spacing: -.9px; font-weight: 700; }
+.citizen-hero p { color: #53657f; margin: 12px 0 0; }
+.citizen-search { max-width: 760px; margin: 0 auto 30px; padding: 24px; }
+.citizen-search-row { display: flex; gap: 12px; }
+.citizen-search-row .btn { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
+.citizen-search-row input { min-width: 0; min-height: 44px; }
+.citizen-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+.citizen-feature { display: flex; flex-direction: row; gap: 14px; padding: 22px; }
+.citizen-feature i { color: #235cd5; font-size: 25px; }
+.citizen-feature h2 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.citizen-feature p { color: #60718b; font-size: 12px; line-height: 1.6; margin: 0; }
+.citizen-result { display: flex; flex-direction: row; align-items: center; gap: 18px; padding: 22px; }
+.citizen-result h2 { font-size: 17px; font-weight: 600; margin: 0 0 7px; }
+.citizen-result p { margin: 0; font-size: 12px; color: #60718b; }
+.citizen-result .record-count { margin-left: auto; color: #53657f; font-size: 12px; }
+.citizen-help { text-align: center; font-size: 12px; color: #60718b; margin-top: 26px; }
+.balance-row { padding: 18px 22px; display: flex; justify-content: space-between; border-top: 1px solid #dce2eb; font-weight: 600; }
+@media (max-width: 760px) {
+    .public-content { padding: 24px 16px; }
+    .public-header-inner { padding: 16px; }
+    .login-grid { grid-template-columns: 1fr; gap: 28px; min-height: auto; }
+    .login-intro { text-align: center; }
+    .login-intro p { font-size: 14px; }
+    .login-intro .login-note, .login-rule { display: none; }
+    .login-card { padding: 26px; }
+    .citizen-features { grid-template-columns: 1fr; margin-top: 26px; }
+    .citizen-result { flex-wrap: wrap; }
+    .citizen-result .record-count { margin-left: 0; }
+    .citizen-search { padding: 20px; }
+    .public-page .form-control { font-size: 16px; }
+}
+@media (max-width: 400px) {
+    .public-brand strong { font-size: 14px; }
+    .public-brand img { width: 32px; height: 32px; }
+    .public-header a.header-link { font-size: 11px; }
+    .citizen-search-row { flex-wrap: wrap; }
+    .citizen-search-row .btn { width: 100%; }
+}
+@media print { .public-header, .public-footer, .citizen-search, .citizen-help { display: none; } .public-content { max-width: none; padding: 0; } }
