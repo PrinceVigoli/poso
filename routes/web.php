@@ -104,7 +104,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/violation-types', [AdminController::class, 'storeViolationType'])->name('violation-types.store');
         Route::put('/violation-types/{violationType}',[AdminController::class,'updateViolationType'])->name('violation-types.update');
 
-        Route::delete('/violation-types/{violationType}', [AdminController::class, 'destroyViolationType'])->name('violation-types.destroy');
+        Route::patch('/violation-types/{violationType}/status', [AdminController::class, 'updateViolationTypeStatus'])->name('violation-types.status');
 
         Route::get('/audit-logs',       [AdminController::class, 'auditLogs'])->name('audit-logs');
     });

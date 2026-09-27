@@ -110,7 +110,7 @@ class AdminController extends Controller
             if ($violationType->violations()->withTrashed()->exists()) {
                 // Issued records keep the ordinance wording and fine from their term.
                 $violationType->delete();
-                ViolationType::create($data + ['offense_key' => $violationType->offense_key]);
+                ViolationType::create($data + ['offense_key' => $violationType->offense_key, 'is_active' => $violationType->is_active]);
             } else {
                 $violationType->update($data);
             }
@@ -131,12 +131,17 @@ class AdminController extends Controller
         return view('admin.audit_logs', compact('logs'));
     }
 
-    public function destroyViolationType(ViolationType $violationType)
+    public function updateViolationTypeStatus(Request $request, ViolationType $violationType)
     {
-        DB::transaction(function () use ($violationType) {
-            ViolationType::lockForUpdate()->findOrFail($violationType->id)->delete();
+        $data = $request->validate(['is_active' => 'required|boolean']);
+        DB::transaction(function () use ($violationType, $data) {
+            $type = ViolationType::lockForUpdate()->findOrFail($violationType->id);
+            if ($type->is_active !== (bool) $data['is_active']) {
+                $type->update(['is_active' => (bool) $data['is_active']]);
+                $status = $type->is_active ? 'Active' : 'Inactive';
+                AuditLog::record('updated', 'violation_types', "Set offense {$type->offense_name} to {$status}.");
+            }
         }, 3);
-        AuditLog::record('deleted', 'violation_types', "Removed offense from current catalog: {$violationType->offense_name}. Historical records retained.");
-        return redirect()->route('admin.violation-types')->with('success', 'Offense removed from new records. Existing history is retained.');
+        return redirect()->route('admin.violation-types')->with('success', 'Offense status updated.');
     }
 }

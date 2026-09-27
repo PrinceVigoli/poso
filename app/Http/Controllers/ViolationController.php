@@ -64,7 +64,7 @@ class ViolationController extends Controller
     public function create()
     {
         abort_unless(auth()->user()->isEnforcer(), 403);
-        $violationTypes = ViolationType::orderBy('offense_name')->get();
+        $violationTypes = ViolationType::active()->orderBy('offense_name')->get();
         return view('violations.create_quick', compact('violationTypes'));
     }
 
@@ -111,7 +111,7 @@ class ViolationController extends Controller
             'additional_info' => 'nullable|string|max:500',
             'contact_no' => 'nullable|string|max:20',
             'birthdate' => 'nullable|date_format:Y-m-d|before_or_equal:today',
-            'violation_type_id' => 'required|exists:violation_types,id,deleted_at,NULL',
+            'violation_type_id' => 'required|exists:violation_types,id,deleted_at,NULL,is_active,1',
             'matched_violator_id' => 'nullable|exists:violators,id',
             'confirm_new' => 'nullable|boolean',
             'confirm_duplicate' => 'nullable|boolean',
@@ -244,6 +244,9 @@ class ViolationController extends Controller
                     throw ValidationException::withMessages(['preview' => 'Please edit and enter an unused TOP ticket number.']);
                 }
                 $type = ViolationType::lockForUpdate()->findOrFail($draft['violation_type_id']);
+                if (!$type->is_active) {
+                    throw ValidationException::withMessages(['preview' => 'This offense is now inactive. Please edit the details and select an active offense.']);
+                }
                 if ((string) $type->fine_amount !== $draft['fine_amount']) {
                     throw ValidationException::withMessages(['preview' => 'The offense fine has changed. Please preview the details again.']);
                 }

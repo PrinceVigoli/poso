@@ -2,7 +2,7 @@
 @section('title', 'Offense Types')
 
 @section('content')
-<p class="text-muted small">Manage current municipal offenses and ordinance fine amounts. Editing a used offense creates a new version; deleting it removes it from new records while preserving history.</p>
+<p class="text-muted small">Manage current municipal offenses and ordinance fine amounts. Set offenses to Active or Inactive. Inactive offenses remain here and in historical records, but cannot be selected for new violations. Editing a used offense creates a new version.</p>
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h5 class="mb-0">Offense Types</h5>
     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
@@ -18,6 +18,7 @@
                     <th>Offense Name</th>
                     <th>Category</th><th>Fine Amount</th>
                     <th>Used</th>
+                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -27,6 +28,7 @@
                     <td><strong>{{ $t->offense_name }}</strong></td>
                     <td>{{ $t->category }}</td><td>{{ $t->fine_label }}</td>
                     <td><span class="badge bg-light text-dark">{{ $t->violations_count }}x</span></td>
+                    <td><span class="badge {{ $t->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $t->is_active ? 'Active' : 'Inactive' }}</span></td>
                     <td>
                         {{-- trigger button only inside tbody, modal is outside --}}
                         <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px"
@@ -38,7 +40,15 @@
                                 data-desc="{{ $t->description }}">
                             Edit
                         </button>
-                        <form method="POST" action="{{ route('admin.violation-types.destroy', $t) }}" class="d-inline" onsubmit="return confirm('Remove this offense from new records? Existing history will be retained.')">@csrf @method('DELETE')<button class="btn btn-outline-danger btn-sm">Delete</button></form>
+                        <form method="POST" action="{{ route('admin.violation-types.status', $t) }}" class="d-inline-flex align-items-center gap-1">
+                            @csrf @method('PATCH')
+                            <label for="status-{{ $t->id }}" class="visually-hidden">Status for {{ $t->offense_name }}</label>
+                            <select name="is_active" id="status-{{ $t->id }}" class="form-select form-select-sm" style="width:auto">
+                                <option value="1" @selected($t->is_active)>Active</option>
+                                <option value="0" @selected(!$t->is_active)>Inactive</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Save status</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach

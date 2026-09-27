@@ -8,7 +8,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ViolationType extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['offense_name', 'category', 'fine_amount', 'description', 'offense_key'];
+    protected $fillable = ['offense_name', 'category', 'fine_amount', 'description', 'offense_key', 'is_active'];
+
+    protected $casts = ['is_active' => 'boolean'];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
     protected static function booted(): void
     {

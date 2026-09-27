@@ -75,7 +75,9 @@ class TreasuryWorkflowTest extends TestCase
         $this->assertEquals(500, $citation->fresh()->fine_amount);
         $new = ViolationType::where('offense_name', 'Helmet ordinance amended')->firstOrFail();
         $this->assertEquals(750, $new->fine_amount);
-        $this->delete(route('admin.violation-types.destroy', $new))->assertRedirect();
+        $this->patch(route('admin.violation-types.status', $new), ['is_active' => 0])->assertRedirect();
+        $this->assertFalse($new->fresh()->is_active);
+        $this->assertFalse($new->fresh()->trashed());
         $this->actingAs($this->account('enforcer'));
         $this->get(route('violations.create'))->assertOk()->assertDontSee('Helmet ordinance amended');
         $this->post(route('violations.store'), ['violator_id' => $citation->violation->violator_id, 'violation_type_id' => $old->id, 'violation_date' => today()->toDateString(), 'location' => 'Luna'])->assertSessionHasErrors('violation_type_id');
