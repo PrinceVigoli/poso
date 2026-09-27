@@ -12,10 +12,10 @@ class Violation extends Model
     protected $fillable = [
         'violator_id', 'officer_id', 'violation_type_id',
         'violation_date', 'location', 'status', 'remarks', 'confiscated_id',
-        'person_snapshot', 'snapshot_source', 'public_access_hash', 'submission_token',
+        'person_snapshot', 'snapshot_source', 'public_access_hash', 'submission_token', 'minor_photos',
     ];
 
-    protected $casts = ['violation_date' => 'date', 'person_snapshot' => 'array'];
+    protected $casts = ['violation_date' => 'date', 'person_snapshot' => 'array', 'minor_photos' => 'array'];
 
     protected static function booted(): void
     {
@@ -35,6 +35,12 @@ class Violation extends Model
     {
         if ($this->status === 'dismissed') { return 'Dismissed'; }
         return $this->citation?->payment_status === 'paid' ? 'Settled' : 'Not Yet Verified';
+    }
+
+    public function getReportPaymentLabelAttribute(): string
+    {
+        if ($this->status === 'dismissed') { return 'Dismissed'; }
+        return $this->citation?->payment_status === 'paid' ? 'Paid' : 'Unpaid';
     }
 
     public function scopePayable($query)

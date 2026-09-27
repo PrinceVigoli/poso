@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Violation;
+use App\Models\ViolationType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class ReportController extends Controller
 
     public function period(Request $request)
     {
-        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly', 'date' => 'nullable|date_format:Y-m-d', 'download' => 'nullable|in:csv']);
+        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly', 'date' => 'nullable|date_format:Y-m-d', 'download' => 'nullable|in:csv', 'type' => 'nullable|integer|exists:violation_types,id', 'payment_status' => 'nullable|in:paid,unpaid']);
         $period = $data['period'] ?? 'daily';
         $date = $data['date'] ?? today()->toDateString();
         $anchor = Carbon::parse($date);
@@ -40,6 +41,29 @@ class ReportController extends Controller
         $settlementsQuery = Violation::payable()->with(['violationType', 'citation'])
             ->whereHas('citation', fn ($q) => $q->where('payment_status', 'paid')->where('paid_at', '>=', $dateFrom)->where('paid_at', '<', $exclusiveEnd));
         $eventsQuery = \App\Models\PaymentEvent::with('user')->whereBetween('created_at', [$start, $end]);
+        $violationTypes = ViolationType::withTrashed()->orderBy('offense_name')->orderByDesc('id')->get()->unique('offense_key');
+        $selectedType = !empty($data['type']) ? ViolationType::withTrashed()->findOrFail($data['type']) : null;
+        $paymentStatus = $data['payment_status'] ?? '';
+        $filter = function ($query) use ($selectedType, $paymentStatus) {
+            if ($selectedType) {
+                $query->whereHas('violationType', fn ($q) => $q->where('offense_key', $selectedType->offense_key));
+            }
+            if ($paymentStatus) {
+                $query->where('status', '!=', 'dismissed');
+                if ($paymentStatus === 'paid') {
+                    $query->whereHas('citation', fn ($q) => $q->where('payment_status', 'paid'));
+                } else {
+                    $query->whereDoesntHave('citation', fn ($q) => $q->where('payment_status', 'paid'));
+                }
+            }
+        };
+        $filter($recordsQuery);
+        $filter($settlementsQuery);
+        if ($selectedType || $paymentStatus) {
+            $matchingIds = Violation::query();
+            $filter($matchingIds);
+            $eventsQuery->whereIn('violation_id', $matchingIds->select('id'));
+        }
         if (($data['download'] ?? null) === 'csv') {
             return response()->streamDownload(function () use ($recordsQuery, $settlementsQuery, $eventsQuery) {
                 $out = fopen('php://output', 'w');
@@ -48,11 +72,11 @@ class ReportController extends Controller
                     $safe = array_map(fn ($value) => is_string($value) && preg_match('/^[\s]*[=+@-]/u', $value) ? "'".$value : $value, $row);
                     fputcsv($out, $safe, ',', '"', '');
                 };
-                $write(['Section', 'Record', 'Name', 'Address', 'Offense', 'Apprehension date', 'Current settlement status', 'POSO verification date', 'Treasury receipt', 'Treasury receipt date', 'Fine', 'Action', 'Admin', 'Reason', 'Event time']);
+                $write(['Section', 'Record', 'Name', 'Address', 'Offense', 'Apprehension date', 'Payment status', 'POSO verification date', 'Treasury receipt', 'Treasury receipt date', 'Fine', 'Action', 'Admin', 'Reason', 'Event time']);
                 foreach (['Apprehension' => $recordsQuery, 'Settlement' => $settlementsQuery] as $section => $query) {
                     foreach ($query->lazyById(200) as $v) {
                         $write([$section, $v->id, $v->personDetail('full_name'), $v->personDetail('address'), $v->violationType?->offense_name,
-                            $v->violation_date->toDateString(), $v->payment_label, $v->citation?->paid_at?->toDateString(),
+                            $v->violation_date->toDateString(), $v->report_payment_label, $v->citation?->paid_at?->toDateString(),
                             $v->citation?->treasury_receipt_no, $v->citation?->receipt_date?->toDateString(), $v->citation?->fine_amount]);
                     }
                 }
@@ -68,6 +92,6 @@ class ReportController extends Controller
         $records = $recordsQuery->orderBy('violation_date')->orderBy('id')->paginate(50, ['*'], 'records_page')->withQueryString();
         $settlements = $settlementsQuery->orderBy('id')->paginate(50, ['*'], 'settlements_page')->withQueryString();
         $paymentEvents = $eventsQuery->orderBy('id')->paginate(50, ['*'], 'events_page')->withQueryString();
-        return view('reports.period', compact('period', 'date', 'dateFrom', 'dateTo', 'records', 'settlements', 'paymentEvents'));
+        return view('reports.period', compact('period', 'date', 'dateFrom', 'dateTo', 'records', 'settlements', 'paymentEvents', 'violationTypes', 'selectedType', 'paymentStatus'));
     }
 }

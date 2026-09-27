@@ -20,7 +20,7 @@ class EnforcerPreviewTest extends TestCase
         $user = User::create(['name' => 'Enforcer', 'username' => 'enforcer', 'email' => 'enforcer@example.test', 'password' => 'password', 'role' => 'enforcer']);
         $this->actingAs($user);
         $type = ViolationType::create(['offense_name' => 'Illegal parking', 'fine_amount' => 500]);
-        return ['full_name' => 'Juan Dela Cruz', 'violation_type_id' => $type->id, 'license_no' => 'N01-123', 'vehicle_plate' => 'ABC 123', 'vehicle_type' => 'Motorcycle', 'contact_no' => '09171234567', 'address' => 'Luna, Apayao', 'birthdate' => '1990-01-02', 'confiscated_id' => 'Student ID', 'additional_info' => 'Presented school identification.'];
+        return ['top_number' => 'TOP-001', 'full_name' => 'Juan Dela Cruz', 'violation_type_id' => $type->id, 'license_no' => 'N01-123', 'vehicle_plate' => 'ABC 123', 'vehicle_type' => 'Motorcycle', 'contact_no' => '09171234567', 'address' => 'Luna, Apayao', 'birthdate' => '1990-01-02', 'confiscated_id' => 'Student ID', 'additional_info' => 'Presented school identification.'];
     }
 
     public function test_preview_saves_nothing_and_confirmation_saves_reviewed_details_once(): void

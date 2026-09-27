@@ -13,6 +13,7 @@
         <div class="card stat-card p-3 h-100">
             <h6 class="mb-3 text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Violation Details</h6>
             <table class="table table-sm table-borderless mb-0" style="font-size:13px">
+                <tr><td class="text-muted">TOP (ticket number)</td><td>{{ $violation->citation?->ticket_no ?? 'Not recorded' }}</td></tr>
                 <tr><td class="text-muted" width="40%">Offense</td><td><strong>{{ $violation->violationType->offense_name }}</strong></td></tr>
                 <tr><td class="text-muted">Date</td><td>{{ $violation->violation_date->format('F d, Y') }}</td></tr>
                 <tr><td class="text-muted">Location</td><td>{{ $violation->location ?? 'Not recorded' }}</td></tr>
@@ -108,4 +109,5 @@
 @endif
 @include('violations._reconcile_fine')
 @if($violation->snapshot_source === 'legacy')<p class="text-muted small mt-3">Historical profile details were preserved from the available data; original incident details may be incomplete.</p>@endif
+@include('violations._minor_photos')
 @endsection

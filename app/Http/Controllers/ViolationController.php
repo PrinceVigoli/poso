@@ -9,6 +9,7 @@ use App\Models\Citation;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -69,7 +70,7 @@ class ViolationController extends Controller
 
     public function clearDraft(Request $request)
     {
-        $request->session()->forget(['enforcer_preview', 'enforcer_input', 'enforcer_drafts']);
+        $request->session()->forget(['enforcer_preview', 'enforcer_input', 'enforcer_drafts', 'enforcer_uploads']);
         return redirect()->route('enforcer.create');
     }
 
@@ -95,6 +96,11 @@ class ViolationController extends Controller
     protected function storeQuickCite(Request $request)
     {
         $data = $request->validate([
+            'top_number' => 'required|string|max:50|unique:citations,ticket_no',
+            'minor_photos' => 'nullable|array|max:5',
+            'minor_photos.*' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'photo_token' => 'nullable|string|size:40',
+            'remove_photos' => 'nullable|boolean',
             'full_name' => 'required|string|max:255',
             'license_no' => 'nullable|string|max:50',
             'vehicle_plate' => 'nullable|string|max:20',
@@ -109,6 +115,41 @@ class ViolationController extends Controller
             'confirm_new' => 'nullable|boolean',
             'confirm_duplicate' => 'nullable|boolean',
         ]);
+        $uploads = collect($request->session()->get('enforcer_uploads', []))
+            ->filter(fn ($upload) => $upload['expires_at'] >= now()->timestamp);
+        $request->session()->put('enforcer_uploads', $uploads->all());
+        $photoToken = null;
+        $photos = [];
+        if (!empty($data['photo_token']) && !$request->boolean('remove_photos') && !$request->hasFile('minor_photos')) {
+            $upload = $request->session()->get('enforcer_uploads.'.$data['photo_token']);
+            if (!$upload || $upload['user_id'] !== $request->user()->id || $upload['expires_at'] < now()->timestamp) {
+                throw ValidationException::withMessages(['minor_photos' => 'Please select the pictures again; the previous upload has expired.']);
+            }
+            $photos = $upload['paths'];
+            $photoToken = $data['photo_token'];
+        }
+        if ($request->hasFile('minor_photos')) {
+            if ($uploads->count() >= 10) {
+                throw ValidationException::withMessages(['minor_photos' => 'You have ten uploaded picture sets. Clear drafts before uploading more.']);
+            }
+            $photos = [];
+            foreach ($request->file('minor_photos') as $photo) {
+                $path = $photo->store('minor-photos', 'local');
+                if (!$path) {
+                    throw ValidationException::withMessages(['minor_photos' => 'The pictures could not be uploaded. Please try again.']);
+                }
+                $photos[] = $path;
+            }
+        }
+        unset($data['minor_photos'], $data['photo_token'], $data['remove_photos']);
+        if ($photos) {
+            $data['photo_token'] = $photoToken ?? Str::random(40);
+            if (!$photoToken) {
+                $request->session()->put('enforcer_uploads.'.$data['photo_token'], [
+                    'paths' => $photos, 'user_id' => $request->user()->id, 'expires_at' => now()->addHour()->timestamp,
+                ]);
+            }
+        }
         $data['full_name'] = trim($data['full_name']);
         $request->session()->forget('enforcer_preview');
         $request->session()->put('enforcer_input', $data);
@@ -148,6 +189,7 @@ class ViolationController extends Controller
             'today_ids' => $todaysViolations->pluck('id')->all(),
             'confiscated_id' => $data['confiscated_id'],
             'additional_info' => $data['additional_info'] ?? null,
+            'top_number' => $data['top_number'], 'minor_photos' => $photos,
         ];
         $drafts = collect($request->session()->get('enforcer_drafts', []))
             ->filter(fn ($saved) => $saved['expires_at'] > now()->timestamp);
@@ -193,34 +235,45 @@ class ViolationController extends Controller
             return redirect()->route('enforcer.create')->withErrors(['preview' => 'Please preview your details again before submitting.']);
         }
 
-        $violation = DB::transaction(function () use ($draft) {
-            $type = ViolationType::lockForUpdate()->findOrFail($draft['violation_type_id']);
-            if ((string) $type->fine_amount !== $draft['fine_amount']) {
-                throw ValidationException::withMessages(['preview' => 'The offense fine has changed. Please preview the details again.']);
+        try {
+            $violation = DB::transaction(function () use ($draft) {
+                if (empty($draft['top_number']) || Citation::where('ticket_no', $draft['top_number'])->exists()) {
+                    throw ValidationException::withMessages(['preview' => 'Please edit and enter an unused TOP ticket number.']);
+                }
+                $type = ViolationType::lockForUpdate()->findOrFail($draft['violation_type_id']);
+                if ((string) $type->fine_amount !== $draft['fine_amount']) {
+                    throw ValidationException::withMessages(['preview' => 'The offense fine has changed. Please preview the details again.']);
+                }
+                $violator = $draft['violator_id'] ? Violator::lockForUpdate()->findOrFail($draft['violator_id']) : null;
+                if (!$violator && $this->findSimilarViolators($draft['profile']['full_name'])->pluck('id')->diff($draft['candidate_ids'])->isNotEmpty()) {
+                    throw ValidationException::withMessages(['preview' => 'Another matching profile was added. Please preview again and check the matches.']);
+                }
+                if ($violator && $violator->violations()->where('violation_date', today())->whereNotIn('id', $draft['today_ids'])->exists()) {
+                    throw ValidationException::withMessages(['preview' => 'Another violation was recorded today. Please preview again to review it.']);
+                }
+                if (!$violator) {
+                    $violator = Violator::create($draft['profile']);
+                    AuditLog::record('created', 'violators', "Added violator: {$violator->full_name}");
+                }
+                $violation = Violation::create([
+                    'violator_id' => $violator->id, 'officer_id' => auth()->id(),
+                    'violation_type_id' => $type->id, 'violation_date' => $draft['violation_date'],
+                    'location' => null, 'status' => 'pending',
+                    'person_snapshot' => $draft['profile'], 'snapshot_source' => 'captured', 'submission_token' => $draft['token'],
+                    'confiscated_id' => $draft['confiscated_id'] ?? null,
+                    'remarks' => $draft['additional_info'] ?? null,
+                    'minor_photos' => $draft['minor_photos'] ?? [],
+                ]);
+                $this->issueCitation($violation, $type->id, $draft['top_number']);
+                AuditLog::record('created', 'violations', "Confirmed enforcer submission #{$violation->id} for violator ID {$violator->id}");
+                return $violation;
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
+            if (Citation::where('ticket_no', $draft['top_number'])->exists()) {
+                throw ValidationException::withMessages(['preview' => 'This TOP ticket number was just used. Please edit and enter an unused number.']);
             }
-            $violator = $draft['violator_id'] ? Violator::lockForUpdate()->findOrFail($draft['violator_id']) : null;
-            if (!$violator && $this->findSimilarViolators($draft['profile']['full_name'])->pluck('id')->diff($draft['candidate_ids'])->isNotEmpty()) {
-                throw ValidationException::withMessages(['preview' => 'Another matching profile was added. Please preview again and check the matches.']);
-            }
-            if ($violator && $violator->violations()->where('violation_date', today())->whereNotIn('id', $draft['today_ids'])->exists()) {
-                throw ValidationException::withMessages(['preview' => 'Another violation was recorded today. Please preview again to review it.']);
-            }
-            if (!$violator) {
-                $violator = Violator::create($draft['profile']);
-                AuditLog::record('created', 'violators', "Added violator: {$violator->full_name}");
-            }
-            $violation = Violation::create([
-                'violator_id' => $violator->id, 'officer_id' => auth()->id(),
-                'violation_type_id' => $type->id, 'violation_date' => $draft['violation_date'],
-                'location' => null, 'status' => 'pending',
-                'person_snapshot' => $draft['profile'], 'snapshot_source' => 'captured', 'submission_token' => $draft['token'],
-                'confiscated_id' => $draft['confiscated_id'] ?? null,
-                'remarks' => $draft['additional_info'] ?? null,
-            ]);
-            $this->issueCitation($violation, $type->id);
-            AuditLog::record('created', 'violations', "Confirmed enforcer submission #{$violation->id} for violator ID {$violator->id}");
-            return $violation;
-        });
+            throw $exception;
+        }
         $request->session()->forget('enforcer_drafts.'.$draft['token']);
         if ($request->session()->get('enforcer_preview.token') === $draft['token']) {
             $request->session()->forget(['enforcer_preview', 'enforcer_input']);
@@ -248,16 +301,33 @@ class ViolationController extends Controller
             })->filter(fn ($v) => $v->match_pct >= 55)->sortByDesc('match_pct')->take(20)->values();
     }
 
-    protected function issueCitation(Violation $violation, int $violationTypeId): void
+    protected function issueCitation(Violation $violation, int $violationTypeId, string $ticketNumber): void
     {
         $type = ViolationType::find($violationTypeId);
         Citation::create([
             'violation_id'   => $violation->id,
-            'ticket_no'      => Citation::generateTicketNo(),
+            'ticket_no'      => $ticketNumber,
             'fine_amount'    => $type->fine_amount,
             'due_date'       => now()->addDays(15)->toDateString(),
             'payment_status' => 'pending',
         ]);
+    }
+
+    public function minorPhoto(Request $request, Violation $violation, int $photo)
+    {
+        abort_unless($request->user()->isAdmin() || ($request->user()->isEnforcer() && $violation->officer_id === $request->user()->id), 403);
+        $path = $violation->minor_photos[$photo] ?? null;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        return Storage::disk('local')->response($path, null, ['Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
+    }
+
+    public function draftPhoto(Request $request, string $token, int $photo)
+    {
+        $upload = $request->session()->get('enforcer_uploads.'.$token);
+        abort_unless($upload && $upload['user_id'] === $request->user()->id && $upload['expires_at'] >= now()->timestamp, 404);
+        $path = $upload['paths'][$photo] ?? null;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        return Storage::disk('local')->response($path, null, ['Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
     }
 
     public function show(Violation $violation)

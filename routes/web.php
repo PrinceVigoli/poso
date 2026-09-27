@@ -78,8 +78,10 @@ Route::middleware(['auth'])->group(function () {
     // Viewing a single violation: admins can view any; the
     // controller restricts enforcers to only the ones they issued.
     Route::get('/violations/{violation}', [ViolationController::class, 'show'])->name('violations.show');
+    Route::get('/violations/{violation}/minor-photos/{photo}', [ViolationController::class, 'minorPhoto'])->whereNumber('photo')->name('violations.minor-photo');
 
     Route::middleware('role:enforcer')->prefix('enforcer')->name('enforcer.')->group(function () {
+        Route::get('/photos/{token}/{photo}', [ViolationController::class, 'draftPhoto'])->whereNumber('photo')->name('photo');
         Route::get('/records', [ViolationController::class, 'mySubmissions'])->name('index');
         Route::post('/clear', [ViolationController::class, 'clearDraft'])->name('clear')->block();
         Route::get('/record', [ViolationController::class, 'create'])->name('create');
