@@ -29,7 +29,7 @@ class AuditFixRegressionTest extends TestCase
     {
         $old = $this->record();
         $this->actingAs($old->officer);
-        $data = ['top_number' => 'TOP-001', 'full_name' => 'Juan Dela Cruz', 'address' => 'Different household', 'vehicle_plate' => 'NEW-456', 'confiscated_id' => 'None', 'violation_type_id' => $old->violation_type_id];
+        $data = ['location' => 'Poblacion checkpoint', 'top_number' => 'TOP-001', 'full_name' => 'Juan Dela Cruz', 'address' => 'Different household', 'vehicle_plate' => 'NEW-456', 'confiscated_id' => 'None', 'violation_type_id' => $old->violation_type_id];
         $this->post(route('enforcer.preview'), $data)->assertViewIs('violations.confirm_match')->assertSee('Original address');
         $this->assertNull(session('enforcer_preview'));
         $this->post(route('enforcer.preview'), $data + ['confirm_new' => 1])->assertRedirect(route('enforcer.review'));
@@ -43,7 +43,7 @@ class AuditFixRegressionTest extends TestCase
     {
         $old = $this->record();
         $this->actingAs($old->officer);
-        $this->post(route('enforcer.preview'), ['top_number' => 'TOP-001', 'full_name' => 'Juan Dela Cruz', 'address' => 'New incident address', 'vehicle_plate' => '', 'confiscated_id' => 'None', 'violation_type_id' => $old->violation_type_id, 'matched_violator_id' => $old->violator_id])->assertRedirect(route('enforcer.review'));
+        $this->post(route('enforcer.preview'), ['location' => 'Poblacion checkpoint', 'top_number' => 'TOP-001', 'full_name' => 'Juan Dela Cruz', 'address' => 'New incident address', 'vehicle_plate' => '', 'confiscated_id' => 'None', 'violation_type_id' => $old->violation_type_id, 'matched_violator_id' => $old->violator_id])->assertRedirect(route('enforcer.review'));
         $this->assertNull(session('enforcer_preview.profile.vehicle_plate'));
         $this->post(route('enforcer.confirm'), ['preview_token' => session('enforcer_preview.token'), 'confirmed' => 1])->assertRedirect();
         $new = Violation::latest('id')->first();

@@ -106,6 +106,7 @@ class ViolationController extends Controller
             'vehicle_plate' => 'nullable|string|max:20',
             'vehicle_type' => 'nullable|string|max:50',
             'address' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
             'confiscated_id' => ['required', \Illuminate\Validation\Rule::in(config('portals.confiscated_ids'))],
             'additional_info' => 'nullable|string|max:500',
             'contact_no' => 'nullable|string|max:20',
@@ -189,6 +190,7 @@ class ViolationController extends Controller
             'today_ids' => $todaysViolations->pluck('id')->all(),
             'confiscated_id' => $data['confiscated_id'],
             'additional_info' => $data['additional_info'] ?? null,
+            'location' => $data['location'],
             'top_number' => $data['top_number'], 'minor_photos' => $photos,
         ];
         $drafts = collect($request->session()->get('enforcer_drafts', []))
@@ -231,7 +233,8 @@ class ViolationController extends Controller
         $draft = $token ? $request->session()->get('enforcer_drafts.'.$token) : $request->session()->get('enforcer_preview');
         if (!$draft || ($draft['schema_version'] ?? null) !== 2 || $draft['user_id'] !== $request->user()->id
             || !hash_equals($draft['token'], $request->input('preview_token'))
-            || $draft['expires_at'] < now()->timestamp || $draft['violation_date'] !== today()->toDateString()) {
+            || $draft['expires_at'] < now()->timestamp || $draft['violation_date'] !== today()->toDateString()
+            || !filled($draft['location'] ?? null)) {
             return redirect()->route('enforcer.create')->withErrors(['preview' => 'Please preview your details again before submitting.']);
         }
 
@@ -258,7 +261,7 @@ class ViolationController extends Controller
                 $violation = Violation::create([
                     'violator_id' => $violator->id, 'officer_id' => auth()->id(),
                     'violation_type_id' => $type->id, 'violation_date' => $draft['violation_date'],
-                    'location' => null, 'status' => 'pending',
+                    'location' => $draft['location'], 'status' => 'pending',
                     'person_snapshot' => $draft['profile'], 'snapshot_source' => 'captured', 'submission_token' => $draft['token'],
                     'confiscated_id' => $draft['confiscated_id'] ?? null,
                     'remarks' => $draft['additional_info'] ?? null,

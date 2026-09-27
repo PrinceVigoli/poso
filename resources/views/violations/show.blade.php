@@ -16,7 +16,7 @@
                 <tr><td class="text-muted">TOP (ticket number)</td><td>{{ $violation->citation?->ticket_no ?? 'Not recorded' }}</td></tr>
                 <tr><td class="text-muted" width="40%">Offense</td><td><strong>{{ $violation->violationType->offense_name }}</strong></td></tr>
                 <tr><td class="text-muted">Date</td><td>{{ $violation->violation_date->format('F d, Y') }}</td></tr>
-                <tr><td class="text-muted">Location</td><td>{{ $violation->location ?? 'Not recorded' }}</td></tr>
+                <tr><td class="text-muted">Apprehension location</td><td>{{ $violation->location ?? 'Not recorded' }}</td></tr>
                 <tr><td class="text-muted">Recorded by</td><td>{{ $violation->officer->name }}</td></tr>
                 <tr><td class="text-muted">ID confiscated</td><td>{{ $violation->confiscated_id ?? 'Not recorded' }}</td></tr>
                 <tr><td class="text-muted">Remarks</td><td>{{ $violation->remarks ?? '—' }}</td></tr>

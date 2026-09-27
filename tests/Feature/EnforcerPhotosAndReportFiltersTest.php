@@ -20,7 +20,7 @@ class EnforcerPhotosAndReportFiltersTest extends TestCase
 
     private function input(): array
     {
-        return ['top_number' => '000123-TOP', 'full_name' => 'Minor Test', 'address' => 'Luna', 'confiscated_id' => 'None',
+        return ['location' => 'Poblacion checkpoint', 'top_number' => '000123-TOP', 'full_name' => 'Minor Test', 'address' => 'Luna', 'confiscated_id' => 'None',
             'violation_type_id' => ViolationType::create(['offense_name' => 'No helmet', 'fine_amount' => 500])->id];
     }
 

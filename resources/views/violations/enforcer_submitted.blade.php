@@ -11,6 +11,7 @@
         @foreach(['license_no' => 'License number', 'vehicle_plate' => 'Vehicle plate', 'vehicle_type' => 'Vehicle type', 'address' => 'Address', 'contact_no' => 'Contact number'] as $field => $label)
             @if(filled($violation->personDetail($field)))<dt>{{ $label }}</dt><dd>{{ $violation->personDetail($field) }}</dd>@endif
         @endforeach
+        <dt>Apprehension location</dt><dd class="text-break">{{ $violation->location ?? 'Not recorded' }}</dd>
         <dt>ID confiscated</dt><dd>{{ $violation->confiscated_id ?? 'Not recorded' }}</dd>
         <dt>Additional information</dt><dd class="text-break">{{ $violation->remarks ?? 'Not provided' }}</dd>
         @if($violation->citation)

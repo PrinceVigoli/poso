@@ -98,7 +98,7 @@ class ArchitectureRemediationTest extends TestCase
     {
         $v = $this->record();
         $this->actingAs($v->officer);
-        $input = ['top_number'=>'TOP-001','full_name'=>'Different Citizen Alpha','address'=>'Example address','confiscated_id'=>'None','violation_type_id'=>$v->violation_type_id,'confirm_new'=>1];
+        $input = ['location'=>'Poblacion checkpoint','top_number'=>'TOP-001','full_name'=>'Different Citizen Alpha','address'=>'Example address','confiscated_id'=>'None','violation_type_id'=>$v->violation_type_id,'confirm_new'=>1];
         $this->post(route('enforcer.preview'), $input)->assertRedirect(); $one = session('enforcer_preview.token');
         $this->get(route('enforcer.create'))->assertOk();
         $this->get(route('enforcer.review', ['draft'=>$one]))->assertOk()->assertSee('Different Citizen Alpha');

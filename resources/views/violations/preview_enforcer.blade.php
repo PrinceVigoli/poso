@@ -15,6 +15,7 @@
         @foreach(['full_name' => 'Full name', 'address' => 'Address', 'vehicle_plate' => 'License plate'] as $field => $label)
             <dt class="col-sm-4 mb-2">{{ $label }}</dt><dd class="col-sm-8 mb-3 text-break">{{ $draft['profile'][$field] ?: 'Not provided' }}</dd>
         @endforeach
+        <dt class="col-sm-4 mb-2">Apprehension location</dt><dd class="col-sm-8 mb-3 text-break">{{ $draft['location'] ?? 'Not recorded' }}</dd>
         <dt class="col-sm-4 mb-2">ID confiscated</dt><dd class="col-sm-8 mb-3">{{ $draft['confiscated_id'] ?? 'Not recorded' }}</dd>
         <dt class="col-sm-4 mb-2">Additional information</dt><dd class="col-sm-8 mb-3 text-break">{{ $draft['additional_info'] ?? 'Not provided' }}</dd>
         <dt class="col-sm-4 mb-2">Offense</dt><dd class="col-sm-8 mb-3">{{ $type->offense_name }}</dd>

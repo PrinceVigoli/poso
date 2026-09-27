@@ -31,7 +31,7 @@ class ViolatorArchiveTest extends TestCase
         $this->get(route('violators.show', $person))->assertOk()->assertSee('Test offense')->assertSee('Archived (settled)');
         $enforcer = User::create(['name' => 'Enforcer', 'username' => 'enforcer', 'email' => 'enforcer@example.test', 'password' => 'password', 'role' => 'enforcer']);
         $this->actingAs($enforcer)->get(route('violations.create'))->assertOk();
-        $this->post(route('enforcer.preview'), ['top_number' => 'TOP-001', 'full_name' => $person->full_name, 'address' => 'Luna', 'confiscated_id' => 'None', 'violation_type_id' => $type->id, 'matched_violator_id' => $person->id, 'confirm_duplicate' => 1])->assertRedirect(route('enforcer.review'));
+        $this->post(route('enforcer.preview'), ['location' => 'Poblacion checkpoint', 'top_number' => 'TOP-001', 'full_name' => $person->full_name, 'address' => 'Luna', 'confiscated_id' => 'None', 'violation_type_id' => $type->id, 'matched_violator_id' => $person->id, 'confirm_duplicate' => 1])->assertRedirect(route('enforcer.review'));
         $this->post(route('enforcer.confirm'), ['preview_token' => session('enforcer_preview.token'), 'confirmed' => 1])->assertRedirect();
         $this->actingAs($user);
         $this->assertFalse($person->isArchived());

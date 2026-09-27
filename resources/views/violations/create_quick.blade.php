@@ -5,7 +5,7 @@
 <div class="card p-4" style="max-width:760px">
     <p class="text-muted small">Enter details</p>
     <h2 class="card-ttl mb-2">Violator information</h2>
-    <p class="text-muted small mb-4">Enter the violator's name, address, offense, and ID confiscated. Preview the details before submitting.</p>
+    <p class="text-muted small mb-4">Enter the violator's name, address, apprehension location, offense, and ID confiscated. Preview the details before submitting.</p>
     <form enctype="multipart/form-data" method="POST" action="{{ route('enforcer.preview') }}">
         @csrf
         <div class="row g-3">
@@ -16,6 +16,11 @@
                 <div class="form-text">Possible profiles are suggested by name. Check their details before selecting the same person.</div>
             </div>
             <div class="col-12"><label for="address" class="form-label">Address <span class="text-danger">*</span></label><input class="form-control" id="address" name="address" maxlength="255" value="{{ old('address', session('enforcer_input.address')) }}" required></div>
+            <div class="col-12">
+                <label for="location" class="form-label">Apprehension location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="location" name="location" maxlength="255" value="{{ old('location', session('enforcer_input.location')) }}" placeholder="Street, barangay, or nearby landmark" required>
+                <div class="form-text">Enter where the apprehension took place.</div>
+            </div>
             <div class="col-sm-6"><label for="vehicle_plate" class="form-label">License plate <span class="text-muted fw-normal">(optional)</span></label><input class="form-control" id="vehicle_plate" name="vehicle_plate" maxlength="20" value="{{ old('vehicle_plate', session('enforcer_input.vehicle_plate')) }}"></div>
             <div class="col-sm-6">
                 <label for="confiscated_id" class="form-label">ID confiscated <span class="text-danger">*</span></label>
