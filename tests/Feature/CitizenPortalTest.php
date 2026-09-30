@@ -98,7 +98,7 @@ class CitizenPortalTest extends TestCase
     public function test_search_form_no_longer_asks_for_an_access_code(): void
     {
         $this->get(route('search'))->assertOk()
-            ->assertSee("Full name, licence number or plate number", false)
+            ->assertSee("Full name (Last name, First name), licence number or plate number", false)
             ->assertDontSee('access_code')
             ->assertDontSee('Private access code');
     }

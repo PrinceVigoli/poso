@@ -20,7 +20,7 @@
                     @foreach($violators as $vl)
                         <option value="{{ $vl->id }}"
                             {{ (old('violator_id', request('violator_id')) == $vl->id) ? 'selected' : '' }}>
-                            {{ $vl->full_name }} — {{ $vl->vehicle_plate ?? 'No plate' }}
+                            {{ $vl->display_name }} — {{ $vl->vehicle_plate ?? 'No plate' }}
                         </option>
                     @endforeach
                 </select>

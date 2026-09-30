@@ -28,13 +28,13 @@
             <thead><tr><th>Violator Name</th><th>License No.</th><th>Plate</th><th>Vehicle</th><th>Total violations</th><th>Not yet verified</th><th>Actions</th></tr></thead>
             <tbody>
                 @forelse($violators as $v)
-                @php $pts=explode(' ',$v->full_name);$ini=strtoupper(substr($pts[0],0,1)).(isset($pts[1])?strtoupper(substr($pts[1],0,1)):''); @endphp
+                @php $pts=explode(' ',$v->display_name);$ini=strtoupper(substr($pts[0],0,1)).(isset($pts[1])?strtoupper(substr($pts[1],0,1)):''); @endphp
                 <tr>
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div class="user-av">{{ $ini }}</div>
                             <div>
-                                <a href="{{ route('violators.show',$v) }}" class="text-decoration-none fw-semibold" style="color:#11253F">{{ $v->full_name }}</a>
+                                <a href="{{ route('violators.show',$v) }}" class="text-decoration-none fw-semibold" style="color:#11253F">{{ $v->display_name }}</a>
                                 @if($v->violations_count > 0 && $v->unpaid_violations_count === 0)<span class="badge bg-secondary ms-1">Archived</span>@endif
                                 @if($v->counted_violations_count >= \App\Models\Violator::repeatOffenderThreshold())<span class="badge badge-repeat ms-1" style="font-size:10px">Repeat</span>@endif
                                 <div style="font-size:11px;color:#93A0B3">{{ $v->address ?? 'No address' }}</div>

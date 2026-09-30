@@ -77,7 +77,7 @@ class SearchController extends Controller
     {
         return Violation::with(['violationType', 'citation'])
             ->whereHas('violator', function ($violator) use ($name, $reference) {
-                $violator->where('normalized_name', $name);
+                $violator->whereIn('normalized_name', [$name, Str::lower(\App\Support\PersonName::display($name))]);
                 if ($reference !== null) {
                     $violator->orWhere('normalized_license', $reference)
                              ->orWhere('normalized_plate', $reference);
@@ -90,6 +90,6 @@ class SearchController extends Controller
 
     private function normalize(string $name): string
     {
-        return Str::lower(Str::squish($name));
+        return \App\Support\PersonName::normalized($name);
     }
 }

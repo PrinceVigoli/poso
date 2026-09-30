@@ -22,7 +22,7 @@ class Violator extends Model
     protected static function booted(): void
     {
         static::saving(function (self $person) {
-            $person->normalized_name = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::squish($person->full_name));
+            $person->normalized_name = \App\Support\PersonName::normalized($person->full_name);
             $person->normalized_license = self::squashReference($person->license_no);
             $person->normalized_plate = self::squashReference($person->vehicle_plate);
         });
@@ -38,6 +38,11 @@ class Violator extends Model
         $squashed = strtoupper(preg_replace('/[\s-]+/', '', (string) $value));
 
         return $squashed === '' ? null : $squashed;
+    }
+
+    public function getDisplayNameAttribute(): ?string
+    {
+        return \App\Support\PersonName::display($this->full_name);
     }
 
     public function violations()

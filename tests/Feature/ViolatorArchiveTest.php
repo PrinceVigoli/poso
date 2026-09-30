@@ -23,11 +23,11 @@ class ViolatorArchiveTest extends TestCase
         $violation = Violation::create(['violator_id' => $person->id, 'officer_id' => $user->id, 'violation_type_id' => $type->id, 'violation_date' => today(), 'location' => 'Test street', 'status' => 'pending']);
         $citation = Citation::create(['violation_id' => $violation->id, 'ticket_no' => 'TEST-001', 'fine_amount' => 100, 'due_date' => today(), 'payment_status' => 'pending']);
 
-        $this->get(route('violators.index'))->assertOk()->assertSee($person->full_name);
+        $this->get(route('violators.index'))->assertOk()->assertSee($person->display_name);
         $this->post(route('citations.pay', $citation), ['treasury_receipt_no' => 'OR-001', 'receipt_date' => today()->toDateString(), 'receipt_total' => 500, 'receipt_verified' => 1])->assertRedirect();
         $this->assertTrue($person->isArchived());
-        $this->get(route('violators.index'))->assertOk()->assertDontSee($person->full_name);
-        $this->get(route('violators.index', ['status' => 'archived', 'search' => 'Archive Test']))->assertOk()->assertSee($person->full_name);
+        $this->get(route('violators.index'))->assertOk()->assertDontSee($person->display_name);
+        $this->get(route('violators.index', ['status' => 'archived', 'search' => 'Archive Test']))->assertOk()->assertSee($person->display_name);
         $this->get(route('violators.show', $person))->assertOk()->assertSee('Test offense')->assertSee('Archived (settled)');
         $enforcer = User::create(['name' => 'Enforcer', 'username' => 'enforcer', 'email' => 'enforcer@example.test', 'password' => 'password', 'role' => 'enforcer']);
         $this->actingAs($enforcer)->get(route('violations.create'))->assertOk();
@@ -37,8 +37,8 @@ class ViolatorArchiveTest extends TestCase
         $this->assertFalse($person->isArchived());
         $this->assertSame(2, $person->violations()->count());
         $this->assertSame(1, Violator::count());
-        $this->get(route('violators.index'))->assertSee($person->full_name);
-        $this->get(route('violators.index', ['status' => 'archived']))->assertDontSee($person->full_name);
+        $this->get(route('violators.index'))->assertSee($person->display_name);
+        $this->get(route('violators.index', ['status' => 'archived']))->assertDontSee($person->display_name);
         $this->get(route('violators.show', $person))->assertSee('Test offense')->assertSee('Record #2');
     }
 
@@ -67,10 +67,10 @@ class ViolatorArchiveTest extends TestCase
         $this->actingAs($user);
         $person = Violator::create(['full_name' => 'Profile Without Violations']);
 
-        $this->get(route('violators.index'))->assertOk()->assertDontSee($person->full_name);
+        $this->get(route('violators.index'))->assertOk()->assertDontSee($person->display_name);
         $this->get(route('violators.index', ['status' => 'active', 'search' => $person->full_name]))->assertOk()->assertViewHas('violators', fn ($violators) => $violators->total() === 0);
-        $this->get(route('violators.index', ['status' => 'archived']))->assertOk()->assertDontSee($person->full_name);
-        $this->get(route('violators.index', ['status' => 'all']))->assertOk()->assertSee($person->full_name);
+        $this->get(route('violators.index', ['status' => 'archived']))->assertOk()->assertDontSee($person->display_name);
+        $this->get(route('violators.index', ['status' => 'all']))->assertOk()->assertSee($person->display_name);
         $this->get(route('violations.create'))->assertForbidden();
         $this->get(route('dashboard'))->assertOk()->assertViewHas('stats', fn ($stats) => $stats['active_violators'] === 0);
     }

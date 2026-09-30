@@ -4,7 +4,7 @@
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-3">
     <a href="{{ route('violators.show', $violator) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left" aria-hidden="true"></i><span class="visually-hidden">Back</span></a>
-    <h5 class="mb-0">Edit Violator — {{ $violator->full_name }}</h5>
+    <h5 class="mb-0">Edit Violator — {{ $violator->display_name }}</h5>
 </div>
 
 <div class="card stat-card p-4" style="max-width:680px">
@@ -14,7 +14,7 @@
             <div class="col-12">
                 <label class="form-label">Full Name <span class="text-danger">*</span></label>
                 <input type="text" name="full_name" class="form-control @error('full_name') is-invalid @enderror"
-                       value="{{ old('full_name', $violator->full_name) }}" required>
+                       value="{{ old('full_name', $violator->display_name) }}" required>
                 @error('full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-6">

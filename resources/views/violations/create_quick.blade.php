@@ -11,8 +11,8 @@
         <div class="row g-3">
             <div class="col-12"><label for="top_number" class="form-label">TOP (ticket number) <span class="text-danger">*</span></label><input type="text" class="form-control" id="top_number" name="top_number" maxlength="50" value="{{ old('top_number', session('enforcer_input.top_number')) }}" required></div>
             <div class="col-12">
-                <label for="full_name" class="form-label">Full name <span class="text-danger">*</span></label>
-                <input id="full_name" type="text" name="full_name" class="form-control" maxlength="255" value="{{ old('full_name', session('enforcer_input.full_name', request('full_name'))) }}" placeholder="e.g. Juan dela Cruz" required autofocus>
+                <label for="full_name" class="form-label">Full name (Last name, First name) <span class="text-danger">*</span></label>
+                <input id="full_name" type="text" name="full_name" class="form-control" maxlength="255" value="{{ old('full_name', session('enforcer_input.full_name', request('full_name'))) }}" placeholder="e.g. dela Cruz, Juan" required autofocus>
                 <div class="form-text">Possible profiles are suggested by name. Check their details before selecting the same person.</div>
             </div>
             <div class="col-12"><label for="address" class="form-label">Address <span class="text-danger">*</span></label><input class="form-control" id="address" name="address" maxlength="255" value="{{ old('address', session('enforcer_input.address')) }}" required></div>
@@ -39,9 +39,17 @@
         </div>
         <div class="mt-3"><label for="additional_info" class="form-label">Additional information <span class="text-muted fw-normal">(optional)</span></label><textarea class="form-control" id="additional_info" name="additional_info" maxlength="500" rows="3">{{ old('additional_info', session('enforcer_input.additional_info')) }}</textarea></div>
         <div class="mt-3">
-            <label for="minor_photos" class="form-label">Pictures for minors <span class="text-muted fw-normal">(optional)</span></label>
-            <input type="file" class="form-control" id="minor_photos" name="minor_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-            <div class="form-text">Up to 5 pictures, 5 MB each. JPG, PNG or WebP. Selecting new pictures replaces previous uploads.</div>
+            <label for="open-camera" class="form-label">Pictures for minors <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="file" id="minor_photos" name="minor_photos[]" accept="image/jpeg" multiple hidden aria-hidden="true" tabindex="-1">
+            <button type="button" id="open-camera" class="btn btn-outline-primary d-block">Open camera</button>
+            <div id="camera-panel" hidden>
+                <video id="camera-preview" autoplay muted playsinline style="width:100%;max-height:360px" class="mt-2 rounded"></video>
+                <button type="button" id="capture-photo" class="btn btn-primary" disabled>Capture picture</button>
+                <button type="button" id="close-camera" class="btn btn-outline-secondary">Close camera</button>
+            </div>
+            <p id="camera-status" class="form-text" role="status" aria-live="polite"></p>
+            <div id="captured-photos" class="d-flex flex-wrap gap-2 mt-2"></div>
+            <div class="form-text">Capture up to 5 pictures directly with the camera. New captures replace previously attached pictures.</div>
             @php($photoToken = old('photo_token', session('enforcer_input.photo_token')))
             @if($photoToken && session('enforcer_uploads.'.$photoToken))
                 <input type="hidden" name="photo_token" value="{{ $photoToken }}">
@@ -54,3 +62,6 @@
     </form>
 </div>
 @endsection
+@push('scripts')
+<script src="{{ asset('js/enforcer-camera.js') }}" defer></script>
+@endpush

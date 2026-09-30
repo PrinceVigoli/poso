@@ -122,18 +122,70 @@ class EnforcerPhotosAndReportFiltersTest extends TestCase
             ->assertViewHas('records', fn ($rows) => $rows->pluck('id')->all() === [$ids[0], $ids[1]])
             ->assertViewHas('settlements', fn ($rows) => $rows->pluck('id')->all() === [$ids[1]])
             ->assertViewHas('paymentEvents', fn ($rows) => $rows->total() === 2)
-            ->assertSee('Unpaid')->assertSee('Paid')->assertDontSee('Parking Paid');
+            ->assertSee('Unpaid')->assertSee('Paid')->assertDontSee('Paid, Parking');
         foreach (['paid' => $ids[1], 'unpaid' => $ids[0]] as $status => $id) {
             $this->get(route('reports.period', $query + ['payment_status' => $status]))->assertOk()
                 ->assertViewHas('records', fn ($rows) => $rows->pluck('id')->all() === [$id])
                 ->assertViewHas('settlements', fn ($rows) => $rows->total() === ($status === 'paid' ? 1 : 0))
                 ->assertViewHas('paymentEvents', fn ($rows) => $rows->pluck('violation_id')->all() === [$id]);
             $csv = $this->get(route('reports.period', $query + ['payment_status' => $status, 'download' => 'csv']))->assertOk()->streamedContent();
-            $this->assertStringContainsString('Helmet '.ucfirst($status), $csv);
-            $this->assertStringNotContainsString('Parking Paid', $csv);
-            $this->assertStringNotContainsString('Helmet '.($status === 'paid' ? 'Unpaid' : 'Paid'), $csv);
+            $this->assertStringContainsString(ucfirst($status).', Helmet', $csv);
+            $this->assertStringNotContainsString('Paid, Parking', $csv);
+            $this->assertStringNotContainsString(($status === 'paid' ? 'Unpaid' : 'Paid').', Helmet', $csv);
         }
         $this->get(route('reports.period', ['type' => 999999]))->assertSessionHasErrors('type');
         $this->get(route('reports.period', ['payment_status' => 'invalid']))->assertSessionHasErrors('payment_status');
+    }
+    public function test_custom_and_annual_reports_apply_inclusive_boundaries_to_every_section_and_csv(): void
+    {
+        $admin = $this->account('admin');
+        $type = ViolationType::create(['offense_name' => 'No helmet', 'fine_amount' => 500]);
+        $ids = [];
+        foreach (['2025-12-31', '2026-01-01', '2026-09-30', '2026-10-01', '2026-12-31', '2027-01-01'] as $date) {
+            $person = Violator::create(['full_name' => 'Person, '.$date]);
+            $v = Violation::create(['violator_id' => $person->id, 'officer_id' => $admin->id, 'violation_type_id' => $type->id, 'violation_date' => $date]);
+            Citation::create(['violation_id' => $v->id, 'ticket_no' => 'RANGE-'.$v->id, 'treasury_receipt_no' => 'RANGE-'.$v->id, 'fine_amount' => 500, 'payment_status' => 'paid', 'paid_at' => $date.' 23:59:59', 'due_date' => $date]);
+            $event = new PaymentEvent(['violation_id' => $v->id, 'user_id' => $admin->id, 'action' => 'verified', 'before_state' => [], 'after_state' => []]);
+            $event->created_at = $date.' 23:59:59';
+            $event->save();
+            $ids[] = $v->id;
+        }
+        $this->actingAs($admin);
+        foreach ([
+            [['period' => 'custom', 'date_from' => '2026-01-01', 'date_to' => '2026-09-30'], [$ids[1], $ids[2]]],
+            [['period' => 'annual', 'year' => 2026], array_slice($ids, 1, 4)],
+            [['period' => 'custom', 'date_from' => '2026-09-30', 'date_to' => '2026-09-30'], [$ids[2]]],
+        ] as [$query, $expected]) {
+            $this->get(route('reports.period', $query))->assertOk()
+                ->assertViewHas('records', fn ($rows) => $rows->pluck('id')->all() === $expected)
+                ->assertViewHas('settlements', fn ($rows) => $rows->pluck('id')->all() === $expected)
+                ->assertViewHas('paymentEvents', fn ($rows) => $rows->pluck('violation_id')->all() === $expected);
+            $csv = $this->get(route('reports.period', $query + ['download' => 'csv']))->assertOk()->streamedContent();
+            foreach ($ids as $id) {
+                if (in_array($id, $expected)) $this->assertStringContainsString('RANGE-'.$id, $csv);
+                else $this->assertStringNotContainsString('RANGE-'.$id, $csv);
+            }
+        }
+        $this->get(route('reports.period', ['period' => 'custom']))->assertSessionHasErrors(['date_from', 'date_to']);
+        $this->get(route('reports.period', ['period' => 'custom', 'date_from' => '2026-09-30', 'date_to' => '2026-01-01']))->assertSessionHasErrors('date_to');
+    }
+
+    public function test_surname_first_names_are_displayed_and_searchable_in_either_order(): void
+    {
+        $admin = $this->account('admin');
+        $type = ViolationType::create(['offense_name' => 'No helmet', 'fine_amount' => 500]);
+        $person = Violator::create(['full_name' => 'Juan dela Cruz']);
+        $v = Violation::create(['violator_id' => $person->id, 'officer_id' => $admin->id, 'violation_type_id' => $type->id, 'violation_date' => today()]);
+        $this->assertSame('dela Cruz, Juan', $person->display_name);
+        $this->assertSame('dela Cruz, Juan', $v->personDetail('full_name'));
+        $this->assertSame('juan dela cruz', \App\Support\PersonName::normalized('dela Cruz, Juan'));
+        $this->actingAs($admin);
+        foreach (['dela Cruz, Juan', 'dela Cruz Juan', 'Juan dela Cruz', 'dela Cruz'] as $term) {
+            $this->get(route('violations.index', ['search' => $term]))->assertOk()->assertViewHas('violations', fn ($rows) => $rows->pluck('id')->all() === [$v->id]);
+            $this->get(route('violators.index', ['status' => 'all', 'search' => $term]))->assertOk()->assertSee('dela Cruz, Juan');
+        }
+        $this->post(route('search.lookup'), ['query' => 'dela Cruz, Juan'])->assertRedirect();
+        $this->get(route('search.results'))->assertOk()->assertViewHas('records', fn ($rows) => $rows->pluck('id')->all() === [$v->id]);
+        $this->actingAs($this->account())->get(route('enforcer.create'))->assertOk()->assertSee('Open camera')->assertSee('enforcer-camera.js')->assertDontSee('type="file" class="form-control"', false);
     }
 }

@@ -38,7 +38,7 @@ class ViolationController extends Controller
             $q = trim($request->search);
             $normalized = strtolower(str_replace([' ', '-'], '', $q));
             $query->where(function ($w) use ($q, $normalized) {
-                $w->where('person_snapshot->full_name', 'like', "%$q%")
+                $w->where(fn ($names) => \App\Support\PersonName::search($names, 'person_snapshot->full_name', $q))
                   ->orWhereRaw("REPLACE(REPLACE(LOWER(json_extract(person_snapshot, '$.vehicle_plate')),' ',''),'-','') LIKE ?", ["%{$normalized}%"]);
             });
         }
@@ -78,7 +78,7 @@ class ViolationController extends Controller
     {
         $data = $request->validate(['search' => 'nullable|string|max:255']);
         $records = Violation::where('officer_id', $request->user()->id)->with(['violationType', 'citation'])
-            ->when($data['search'] ?? null, fn ($q, $term) => $q->where('person_snapshot->full_name', 'like', '%'.$term.'%'))
+            ->when($data['search'] ?? null, fn ($q, $term) => $q->where(fn ($names) => \App\Support\PersonName::search($names, 'person_snapshot->full_name', $term)))
             ->latest('id')->paginate(15)->withQueryString();
         return response()->view('violations.my_submissions', compact('records'))->header('Cache-Control', 'no-store, private');
     }
@@ -291,7 +291,7 @@ class ViolationController extends Controller
     // tolerance) so the enforcer isn't forced to create a duplicate record.
     protected function findSimilarViolators(string $name, int $limit = 5)
     {
-        $target = Str::lower(Str::squish($name));
+        $target = \App\Support\PersonName::normalized($name);
         $prefix = mb_substr($target, 0, 3);
         // Exact matches rank first. Score at most 200 candidates in PHP.
         // Prefix LIKE can use the normalized-name index. It is only a suggestion,
@@ -301,7 +301,7 @@ class ViolationController extends Controller
             ->orderByRaw('CASE WHEN normalized_name = ? THEN 0 ELSE 1 END', [$target])
             ->orderBy('id')->limit(200)->get()
             ->map(function ($v) use ($target) {
-                similar_text($target, Str::lower(Str::squish($v->full_name)), $pct);
+                similar_text($target, \App\Support\PersonName::normalized($v->full_name), $pct);
                 $v->match_pct = (int) round($pct);
                 return $v;
             })->filter(fn ($v) => $v->match_pct >= 55)->sortByDesc('match_pct')->take(20)->values();

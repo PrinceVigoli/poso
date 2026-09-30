@@ -24,10 +24,10 @@
             <input type="hidden" name="matched_violator_id" value="{{ $c->id }}">
             <button type="submit" class="btn btn-outline-secondary w-100 d-flex align-items-center gap-2 text-start" style="padding:10px 14px">
                 <div style="width:32px;height:32px;border-radius:50%;background:#E9F0F9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0F3D73;flex-shrink:0">
-                    {{ strtoupper(substr($c->full_name,0,1)) }}
+                    {{ strtoupper(substr($c->display_name,0,1)) }}
                 </div>
                 <div class="flex-fill">
-                    <div style="font-size:13px;font-weight:600;color:#11253F">{{ $c->full_name }}</div>
+                    <div style="font-size:13px;font-weight:600;color:#11253F">{{ $c->display_name }}</div>
                     <div style="font-size:11px;color:#93A0B3">Profile #{{ $c->id }} · {{ $c->address ?? 'Address not recorded' }} · {{ $c->vehicle_type ?? '—' }} · {{ $c->vehicle_plate ?? 'No plate' }} · {{ $c->match_pct }}% match</div>
                 </div>
             </button>

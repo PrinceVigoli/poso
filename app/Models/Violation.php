@@ -28,7 +28,9 @@ class Violation extends Model
 
     public function personDetail(string $field): ?string
     {
-        return $this->person_snapshot[$field] ?? null;
+        return $field === 'full_name'
+            ? \App\Support\PersonName::display($this->person_snapshot[$field] ?? null)
+            : ($this->person_snapshot[$field] ?? null);
     }
 
     public function getPaymentLabelAttribute(): string

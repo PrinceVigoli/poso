@@ -101,7 +101,7 @@ class ArchitectureRemediationTest extends TestCase
         $input = ['location'=>'Poblacion checkpoint','top_number'=>'TOP-001','full_name'=>'Different Citizen Alpha','address'=>'Example address','confiscated_id'=>'None','violation_type_id'=>$v->violation_type_id,'confirm_new'=>1];
         $this->post(route('enforcer.preview'), $input)->assertRedirect(); $one = session('enforcer_preview.token');
         $this->get(route('enforcer.create'))->assertOk();
-        $this->get(route('enforcer.review', ['draft'=>$one]))->assertOk()->assertSee('Different Citizen Alpha');
+        $this->get(route('enforcer.review', ['draft'=>$one]))->assertOk()->assertSee('Alpha, Different Citizen');
         $this->post(route('enforcer.preview'), array_merge($input, ['top_number'=>'TOP-002','full_name'=>'Separate Person Beta']))->assertRedirect(); $two = session('enforcer_preview.token');
         $this->post(route('enforcer.confirm'), ['preview_token'=>$one,'confirmed'=>1])->assertSessionHasNoErrors();
         $this->assertSame($two, session('enforcer_preview.token'));

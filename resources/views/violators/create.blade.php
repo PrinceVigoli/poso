@@ -14,9 +14,9 @@
         @csrf
         <div class="row g-3">
             <div class="col-12">
-                <label class="form-label">Full name <span class="text-danger">*</span></label>
+                <label class="form-label">Full name (Last name, First name) <span class="text-danger">*</span></label>
                 <input type="text" name="full_name" class="form-control @error('full_name') is-invalid @enderror"
-                       value="{{ old('full_name') }}" placeholder="e.g. Juan dela Cruz" required>
+                       value="{{ old('full_name') }}" placeholder="e.g. dela Cruz, Juan" required>
                 @error('full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-6">

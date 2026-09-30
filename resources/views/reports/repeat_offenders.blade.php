@@ -40,8 +40,8 @@
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <div class="user-avatar">{{ strtoupper(substr($v->full_name,0,1)) }}{{ strtoupper(substr(strrchr($v->full_name,' '),1,1)) }}</div>
-                            <a href="{{ route('violators.show', $v) }}" class="text-decoration-none fw-semibold" style="color:#11253F">{{ $v->full_name }}</a>
+                            <div class="user-avatar">{{ strtoupper(substr($v->display_name,0,1)) }}{{ strtoupper(substr(strrchr($v->display_name,' '),1,1)) }}</div>
+                            <a href="{{ route('violators.show', $v) }}" class="text-decoration-none fw-semibold" style="color:#11253F">{{ $v->display_name }}</a>
                         </div>
                     </td>
                     <td style="color:#55637A">{{ $v->license_no ?? '—' }}</td>

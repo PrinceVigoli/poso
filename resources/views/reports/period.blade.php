@@ -2,12 +2,15 @@
 @section('title', ucfirst($period).' Report')
 @section('content')
 <div class="card p-3 mb-4 report-controls"><form method="GET" action="{{ route('reports.period') }}" class="d-flex flex-wrap gap-3 align-items-end">
-<div><label class="form-label" for="period">Report period</label><select name="period" id="period" class="form-select">@foreach(['daily','weekly','monthly'] as $option)<option value="{{ $option }}" @selected($period === $option)>{{ ucfirst($option) }}</option>@endforeach</select></div>
-<div><label class="form-label" for="date">Date within the period</label><input type="date" class="form-control" name="date" id="date" value="{{ $date }}" required></div>
+<div><label class="form-label" for="period">Report period</label><select name="period" id="period" class="form-select">@foreach(['daily','weekly','monthly','annual','custom'] as $option)<option value="{{ $option }}" @selected($period === $option)>{{ $option === 'custom' ? 'Custom date range' : ucfirst($option) }}</option>@endforeach</select></div>
+<div data-period="standard"><label class="form-label" for="date">Date within the period</label><input type="date" class="form-control" name="date" id="date" value="{{ $date }}" required></div>
+<div data-period="annual"><label class="form-label" for="year">Year</label><input type="number" name="year" id="year" class="form-control" min="1900" max="9999" value="{{ $year }}" required></div>
+<div data-period="custom"><label class="form-label" for="date_from">Start date</label><input type="date" name="date_from" id="date_from" class="form-control" value="{{ $dateFrom }}" required></div>
+<div data-period="custom"><label class="form-label" for="date_to">End date</label><input type="date" name="date_to" id="date_to" class="form-control" value="{{ $dateTo }}" required></div>
 <div><label class="form-label" for="type">Violation</label><select name="type" id="type" class="form-select"><option value="">All violations</option>@foreach($violationTypes as $type)<option value="{{ $type->id }}" @selected($selectedType?->offense_key === $type->offense_key)>{{ $type->offense_name }}</option>@endforeach</select></div>
 <div><label class="form-label" for="payment_status">Payment status</label><select name="payment_status" id="payment_status" class="form-select"><option value="">All statuses</option><option value="paid" @selected($paymentStatus === 'paid')>Paid</option><option value="unpaid" @selected($paymentStatus === 'unpaid')>Unpaid</option></select></div>
 <button class="btn btn-primary">View report</button><button type="button" onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer me-2"></i>Print report</button></form></div>
-<p class="report-controls"><a class="btn btn-outline-primary" href="{{ route('reports.period', ['period' => $period, 'date' => $date, 'download' => 'csv', 'type' => $selectedType?->id, 'payment_status' => $paymentStatus]) }}">Download filtered report (CSV)</a></p>
+<p class="report-controls"><a class="btn btn-outline-primary" href="{{ route('reports.period', ['period' => $period, 'date' => $date, 'year' => $year, 'date_from' => $dateFrom, 'date_to' => $dateTo, 'download' => 'csv', 'type' => $selectedType?->id, 'payment_status' => $paymentStatus]) }}">Download filtered report (CSV)</a></p>
 <p class="small text-muted">Each section shows up to 50 rows per page. Printing includes the displayed rows. Download the CSV for all rows matching the selected filters.</p>
 <section class="card p-4 report-document">
 <header class="mb-4"><h2 class="h5">Public Order &amp; Safety Office &middot; Luna, Apayao</h2><p class="mb-1">{{ ucfirst($period) }} apprehension and settlement report</p><strong>{{ $dateFrom }} to {{ $dateTo }}</strong><p class="mt-2 mb-0">Violation: {{ $selectedType?->offense_name ?? 'All violations' }} &middot; Payment status: {{ $paymentStatus ? ucfirst($paymentStatus) : 'All statuses' }}</p><p class="small text-muted mt-2">POSO verifies Treasury receipts. No money is collected by POSO.</p></header>
@@ -34,3 +37,18 @@
 </section>
 @endsection
 @push('styles')<style>@media print { .report-controls, .page-heading { display:none !important; } .report-document { border:0; padding:0 !important; break-inside:auto; } .report-document .table { font-size:10px; } .report-document thead { display:table-header-group; } .report-document tr { break-inside:avoid; } }</style>@endpush
+
+@push('scripts')
+<script>
+const period = document.getElementById('period');
+function updatePeriod() {
+    const group = ['annual', 'custom'].includes(period.value) ? period.value : 'standard';
+    document.querySelectorAll('[data-period]').forEach(container => {
+        container.hidden = container.dataset.period !== group;
+        container.querySelectorAll('input').forEach(input => input.disabled = container.hidden);
+    });
+}
+period.addEventListener('change', updatePeriod);
+updatePeriod();
+</script>
+@endpush

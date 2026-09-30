@@ -13,7 +13,7 @@
     <div class="alert alert-warning d-flex gap-2" style="font-size:12.5px">
         <i class="bi bi-exclamation-triangle"></i>
         <div>
-            <strong>{{ $violator->full_name }}</strong> already has {{ $todaysViolations->count() }}
+            <strong>{{ $violator->display_name }}</strong> already has {{ $todaysViolations->count() }}
             violation{{ $todaysViolations->count() === 1 ? '' : 's' }} on record for today.
         </div>
     </div>
@@ -37,7 +37,7 @@
     <form method="POST" action="{{ route('enforcer.preview') }}">
         @csrf
         @include('violations._enforcer_details_hidden')
-        <input type="hidden" name="full_name" value="{{ $violator->full_name }}">
+        <input type="hidden" name="full_name" value="{{ $violator->display_name }}">
         <input type="hidden" name="violation_type_id" value="{{ $violationTypeId }}">
         <input type="hidden" name="matched_violator_id" value="{{ $violator->id }}">
         <input type="hidden" name="confirm_duplicate" value="1">

@@ -13,22 +13,27 @@ class ReportController extends Controller
     // Kept as a redirect so existing links and bookmarks still resolve.
     public function index() { return redirect()->route('reports.period'); }
 
-    // Preserve old links, but use the same restricted daily/weekly/monthly report.
+    // Preserve old links, but use the same period report.
     public function violations(Request $request) { return $this->period($request); }
     public function summary(Request $request) { return $this->period($request); }
 
     public function period(Request $request)
     {
-        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly', 'date' => 'nullable|date_format:Y-m-d', 'download' => 'nullable|in:csv', 'type' => 'nullable|integer|exists:violation_types,id', 'payment_status' => 'nullable|in:paid,unpaid']);
+        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly,annual,custom', 'date' => 'nullable|date_format:Y-m-d', 'year' => 'nullable|integer|between:1900,9999', 'date_from' => 'required_if:period,custom|nullable|date_format:Y-m-d', 'date_to' => 'required_if:period,custom|nullable|date_format:Y-m-d|after_or_equal:date_from', 'download' => 'nullable|in:csv', 'type' => 'nullable|integer|exists:violation_types,id', 'payment_status' => 'nullable|in:paid,unpaid']);
         $period = $data['period'] ?? 'daily';
         $date = $data['date'] ?? today()->toDateString();
         $anchor = Carbon::parse($date);
+        $year = (int) ($data['year'] ?? $anchor->year);
         $start = match ($period) {
+            'custom' => Carbon::parse($data['date_from'])->startOfDay(),
+            'annual' => Carbon::create($year, 1, 1)->startOfDay(),
             'weekly' => $anchor->copy()->startOfWeek(Carbon::MONDAY),
             'monthly' => $anchor->copy()->startOfMonth(),
             default => $anchor->copy()->startOfDay(),
         };
         $end = match ($period) {
+            'custom' => Carbon::parse($data['date_to'])->endOfDay(),
+            'annual' => $start->copy()->endOfYear(),
             'weekly' => $start->copy()->addDays(6)->endOfDay(),
             'monthly' => $anchor->copy()->endOfMonth(),
             default => $anchor->copy()->endOfDay(),
@@ -92,6 +97,6 @@ class ReportController extends Controller
         $records = $recordsQuery->orderBy('violation_date')->orderBy('id')->paginate(50, ['*'], 'records_page')->withQueryString();
         $settlements = $settlementsQuery->orderBy('id')->paginate(50, ['*'], 'settlements_page')->withQueryString();
         $paymentEvents = $eventsQuery->orderBy('id')->paginate(50, ['*'], 'events_page')->withQueryString();
-        return view('reports.period', compact('period', 'date', 'dateFrom', 'dateTo', 'records', 'settlements', 'paymentEvents', 'violationTypes', 'selectedType', 'paymentStatus'));
+        return view('reports.period', compact('period', 'date', 'year', 'dateFrom', 'dateTo', 'records', 'settlements', 'paymentEvents', 'violationTypes', 'selectedType', 'paymentStatus'));
     }
 }

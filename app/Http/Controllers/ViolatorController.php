@@ -24,7 +24,7 @@ class ViolatorController extends Controller
         if ($request->filled('search')) {
             $q = $request->search;
             $query->where(function ($w) use ($q) {
-                $w->where('full_name', 'like', "%$q%")
+                $w->where(fn ($names) => \App\Support\PersonName::search($names, 'full_name', $q))
                   ->orWhere('license_no', 'like', "%$q%")
                   ->orWhere('vehicle_plate', 'like', "%$q%")
                   ->orWhereHas('violations', fn ($v) => $v->where('person_snapshot->vehicle_plate', 'like', "%$q%"));

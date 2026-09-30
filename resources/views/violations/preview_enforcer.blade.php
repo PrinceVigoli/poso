@@ -6,14 +6,14 @@
     <h2 class="card-ttl mb-3">Please check every detail</h2>
     <div class="alert alert-info">Nothing has been saved yet. Confirm below to save the violation record.</div>
     @if($violator)
-        <p class="small">Using the existing profile for <strong>{{ $violator->full_name }}</strong>. You selected this person explicitly. These details will be saved with this incident; earlier records and the profile will remain unchanged.</p>
+        <p class="small">Using the existing profile for <strong>{{ $violator->display_name }}</strong>. You selected this person explicitly. These details will be saved with this incident; earlier records and the profile will remain unchanged.</p>
     @else
         <p class="small text-muted">A new violator profile will be created after confirmation.</p>
     @endif
     <dl class="row mb-3">
         <dt class="col-sm-4 mb-2">TOP (ticket number)</dt><dd class="col-sm-8 mb-3">{{ $draft['top_number'] ?? 'Not recorded' }}</dd>
         @foreach(['full_name' => 'Full name', 'address' => 'Address', 'vehicle_plate' => 'License plate'] as $field => $label)
-            <dt class="col-sm-4 mb-2">{{ $label }}</dt><dd class="col-sm-8 mb-3 text-break">{{ $draft['profile'][$field] ?: 'Not provided' }}</dd>
+            <dt class="col-sm-4 mb-2">{{ $label }}</dt><dd class="col-sm-8 mb-3 text-break">{{ ($field === 'full_name' ? \App\Support\PersonName::display($draft['profile'][$field]) : $draft['profile'][$field]) ?: 'Not provided' }}</dd>
         @endforeach
         <dt class="col-sm-4 mb-2">Apprehension location</dt><dd class="col-sm-8 mb-3 text-break">{{ $draft['location'] ?? 'Not recorded' }}</dd>
         <dt class="col-sm-4 mb-2">ID confiscated</dt><dd class="col-sm-8 mb-3">{{ $draft['confiscated_id'] ?? 'Not recorded' }}</dd>

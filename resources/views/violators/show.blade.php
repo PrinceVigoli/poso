@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $violator->full_name)
+@section('title', $violator->display_name)
 
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -24,7 +24,7 @@
                 <div style="width:64px;height:64px;border-radius:50%;background:rgba(15,61,115,.12);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:28px;color:#0F3D73">
                     <i class="bi bi-person"></i>
                 </div>
-                <h6 class="mt-2 mb-0">{{ $violator->full_name }}</h6>
+                <h6 class="mt-2 mb-0">{{ $violator->display_name }}</h6>
                 @if($isRepeatOffender)
                     {{-- Show the qualifying count and the total separately: they differ whenever a violation was dismissed. --}}
                     <small class="text-danger d-block">⚠ Repeat Offender ({{ $countedViolations }} counted {{ \Illuminate\Support\Str::plural('violation', $countedViolations) }})</small>
@@ -43,7 +43,7 @@
             <hr>
             <div class="d-flex gap-2">
                 
-                @if(auth()->user()->isEnforcer())<a href="{{ route('violations.create') }}?violator_id={{ $violator->id }}&full_name={{ urlencode($violator->full_name) }}" class="btn btn-sm btn-primary w-100">
+                @if(auth()->user()->isEnforcer())<a href="{{ route('violations.create') }}?violator_id={{ $violator->id }}&full_name={{ urlencode($violator->display_name) }}" class="btn btn-sm btn-primary w-100">
                     <i class="bi bi-plus me-1"></i> Add Violation
                 </a>@endif
             </div>
