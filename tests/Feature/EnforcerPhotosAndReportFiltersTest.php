@@ -50,6 +50,9 @@ class EnforcerPhotosAndReportFiltersTest extends TestCase
         $this->post(route('enforcer.confirm'), ['preview_token' => $draft['token'], 'confirmed' => 1, 'top_number' => 'TAMPERED'])->assertSessionHasNoErrors();
         $v = Violation::latest('id')->firstOrFail();
         $this->assertSame('000123-TOP', $v->citation->ticket_no);
+        $issuedAccess = session('citizen_access');
+        $this->assertSame($v->id, $issuedAccess['record_id']);
+        $this->assertSame(hash('sha256', \App\Support\CitizenAccess::normalize($issuedAccess['code'])), $v->public_access_hash);
         $this->assertCount(1, $v->minor_photos);
         Storage::disk('local')->assertExists($v->minor_photos[0]);
         $url = route('violations.minor-photo', ['violation' => $v, 'photo' => 0]);
@@ -184,8 +187,8 @@ class EnforcerPhotosAndReportFiltersTest extends TestCase
             $this->get(route('violations.index', ['search' => $term]))->assertOk()->assertViewHas('violations', fn ($rows) => $rows->pluck('id')->all() === [$v->id]);
             $this->get(route('violators.index', ['status' => 'all', 'search' => $term]))->assertOk()->assertSee('dela Cruz, Juan');
         }
-        $this->post(route('search.lookup'), ['query' => 'dela Cruz, Juan'])->assertRedirect();
-        $this->get(route('search.results'))->assertOk()->assertViewHas('records', fn ($rows) => $rows->pluck('id')->all() === [$v->id]);
+        $this->post(route('search.lookup'), ['query' => 'dela Cruz, Juan'])->assertSessionHasErrors('lookup');
+        $this->get(route('search.results'))->assertRedirect(route('search'));
         $this->actingAs($this->account())->get(route('enforcer.create'))->assertOk()->assertSee('Open camera')->assertSee('enforcer-camera.js')->assertDontSee('type="file" class="form-control"', false);
     }
 }

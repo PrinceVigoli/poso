@@ -1,7 +1,8 @@
 <?php
 namespace Tests\Feature;
 
-use App\Models\{Citation, User, Violation, ViolationType, Violator};
+use App\Models\{AuditLog, Citation, User, Violation, ViolationType, Violator};
+use App\Support\CitizenAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -9,173 +10,147 @@ class CitizenPortalTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function record(string $name = 'Citizen Test', string $status = 'pending', ?string $license = null): Violation
+    private function account(string $role = 'enforcer'): User
     {
-        $user = User::create(['name' => 'Enforcer', 'username' => 'enforcer'.User::count(), 'email' => 'e'.User::count().'@example.test', 'password' => 'password', 'role' => 'enforcer']);
-        $person = Violator::firstOrCreate(['full_name' => $name], ['address' => 'Private home address', 'vehicle_plate' => 'ABC-123', 'license_no' => $license]);
-        $v = Violation::create(['violator_id' => $person->id, 'officer_id' => $user->id, 'violation_type_id' => ViolationType::firstOrFail()->id, 'violation_date' => today()]);
-        Citation::create(['violation_id' => $v->id, 'ticket_no' => Citation::generateTicketNo(), 'fine_amount' => 500, 'due_date' => today(), 'payment_status' => $status]);
-        return $v;
+        $n = User::count();
+        return User::create(['name' => 'Staff '.$n, 'username' => 'staff'.$n, 'email' => 'staff'.$n.'@example.test', 'password' => 'password', 'role' => $role]);
     }
 
-    public function test_citizen_searches_by_name_alone_and_sees_settlement_status(): void
+    private function record(string $status = 'pending'): array
     {
-        $this->record();
-        $this->post(route('search.lookup'), ['query' => 'citizen test'])->assertRedirect(route('search.results'));
-        $this->get(route('search.results'))->assertOk()
-            ->assertSee('Settlement status')
-            ->assertSee('Not Yet Verified')
-            ->assertHeader('Cache-Control', 'no-store, private');
+        $owner = $this->account();
+        $person = Violator::firstOrCreate(['full_name' => 'Citizen Test'], ['address' => 'Private home address', 'vehicle_plate' => 'ABC-123', 'license_no' => 'N01-123']);
+        $type = ViolationType::firstOrCreate(['offense_name' => 'Private offense'], ['fine_amount' => 500]);
+        $record = Violation::create(['violator_id' => $person->id, 'officer_id' => $owner->id, 'violation_type_id' => $type->id, 'violation_date' => today()]);
+        Citation::create(['violation_id' => $record->id, 'ticket_no' => 'TOP-'.$record->id, 'fine_amount' => 500, 'due_date' => today(), 'payment_status' => $status, 'paid_at' => $status === 'paid' ? today() : null]);
+        $code = CitizenAccess::issue($record, 'Test ticket issuance.');
+        return [$record->fresh(), $code];
     }
 
-    public function test_name_matching_ignores_case_and_extra_spacing(): void
+    private function credentials(Violation $record, string $code): array
     {
-        $this->record();
-        $this->post(route('search.lookup'), ['query' => '  CITIZEN   TEST  '])->assertRedirect(route('search.results'));
+        return ['ticket_no' => $record->citation->ticket_no, 'access_code' => $code];
+    }
+
+    public function test_credentials_open_only_one_ticket_and_expose_only_status(): void
+    {
+        [$record, $code] = $this->record();
+        [$other] = $this->record('paid');
+        $this->post(route('search.lookup'), $this->credentials($record, $code))->assertRedirect(route('search.results'));
+        $this->get(route('search.results'))->assertOk()->assertViewHas('record', fn ($row) => $row->id === $record->id)
+            ->assertSee('Not Yet Verified')->assertSee($record->citation->ticket_no)
+            ->assertDontSee($other->citation->ticket_no)->assertDontSee('Private home address')->assertDontSee('Citizen Test')
+            ->assertDontSee('ABC-123')->assertDontSee('N01-123')->assertDontSee('Private offense')->assertDontSee('500.00')
+            ->assertDontSee($code)->assertDontSee($record->public_access_hash)
+            ->assertHeader('Cache-Control', 'no-store, private')->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        $this->assertStringNotContainsString($code, json_encode(session('public_record')));
+        $this->assertArrayNotHasKey('public_access_hash', $record->toArray());
+    }
+
+    public function test_name_plate_license_and_ticket_alone_cannot_open_records(): void
+    {
+        [$record] = $this->record();
+        foreach ([['query' => 'Citizen Test'], ['query' => 'ABC-123'], ['query' => 'N01-123'], ['ticket_no' => $record->citation->ticket_no]] as $input) {
+            $this->post(route('search.lookup'), $input)->assertRedirect(route('search'))->assertSessionHasErrors('lookup')->assertSessionMissing('public_record');
+        }
+        $this->get(route('search.results'))->assertRedirect(route('search'));
+    }
+
+    public function test_failures_are_generic_and_never_flash_codes_or_other_inputs(): void
+    {
+        [$record, $code] = $this->record();
+        $message = null;
+        foreach ([['ticket_no' => 'UNKNOWN', 'access_code' => $code], $this->credentials($record, str_repeat('A', 32)), ['ticket_no' => [], 'access_code' => ['bad']]] as $input) {
+            $this->post(route('search.lookup'), $input)->assertRedirect(route('search'))->assertSessionHasErrors('lookup')->assertSessionMissing('public_record');
+            $current = session('errors')->first('lookup');
+            $message ??= $current;
+            $this->assertSame($message, $current);
+            $this->assertEmpty(session()->getOldInput());
+        }
+    }
+
+    public function test_code_formatting_is_tolerant_but_codes_are_bound_to_one_ticket(): void
+    {
+        [$record, $code] = $this->record();
+        [$other] = $this->record('paid');
+        $this->post(route('search.lookup'), $this->credentials($other, $code))->assertSessionHasErrors('lookup');
+        $this->post(route('search.lookup'), $this->credentials($record, strtolower(str_replace('-', ' ', $code))))->assertRedirect(route('search.results'));
         $this->get(route('search.results'))->assertOk()->assertSee('Not Yet Verified');
     }
 
-    /** All of one person's records are listed, so they can see what is still open. */
-    public function test_every_record_under_the_name_is_listed(): void
+    public function test_sessions_expire_after_fifteen_minutes_and_closing_revokes_access(): void
     {
-        $this->record();
-        $settled = $this->record('Citizen Test', 'paid');
-        $settled->update(['status' => 'settled']);
-
-        $this->post(route('search.lookup'), ['query' => 'Citizen Test'])->assertRedirect();
-        $this->get(route('search.results'))->assertOk()
-            ->assertSee('Not Yet Verified')
-            ->assertSee('Settled')
-            ->assertSee('2 records were recorded under this name');
-    }
-
-    public function test_an_unknown_name_returns_no_records_rather_than_an_error(): void
-    {
-        $this->record();
-        $this->post(route('search.lookup'), ['query' => 'Nobody At All'])->assertRedirect(route('search.results'));
-        $this->get(route('search.results'))->assertOk()
-            ->assertSee('No violation record was found under that name')
-            ->assertDontSee('Not Yet Verified');
-    }
-
-    /** Only settlement status is public. Address, plate and fine are not. */
-    public function test_results_never_expose_address_plate_or_fine_amount(): void
-    {
-        $this->record();
-        $this->post(route('search.lookup'), ['query' => 'Citizen Test']);
-        $this->get(route('search.results'))->assertOk()
-            ->assertDontSee('Private home address')
-            ->assertDontSee('ABC-123')
-            ->assertDontSee('500.00');
-    }
-
-    public function test_results_require_a_search_and_expire_after_fifteen_minutes(): void
-    {
-        $this->record();
-        $this->get(route('search.results'))->assertRedirect(route('search'));
-
-        $this->post(route('search.lookup'), ['query' => 'Citizen Test'])->assertRedirect();
-        $this->get(route('search.results'))->assertOk();
-
-        $this->travel(16)->minutes();
-        $this->get(route('search.results'))->assertRedirect(route('search'))->assertSessionHasErrors('lookup');
+        [$record, $code] = $this->record();
+        $this->post(route('search.lookup'), $this->credentials($record, $code));
+        $this->travel(15)->minutes();
+        $this->get(route('search.results'))->assertRedirect(route('search'))->assertSessionMissing('public_record');
         $this->travelBack();
-    }
-
-    public function test_closing_the_records_clears_the_search(): void
-    {
-        $this->record();
-        $this->post(route('search.lookup'), ['query' => 'Citizen Test']);
+        $this->post(route('search.lookup'), $this->credentials($record, $code));
         $this->post(route('search.forget'))->assertRedirect(route('search'));
         $this->get(route('search.results'))->assertRedirect(route('search'));
     }
 
-    public function test_a_blank_name_is_rejected(): void
+    public function test_replacement_revokes_old_code_and_existing_sessions_and_deleted_records(): void
     {
-        $this->post(route('search.lookup'), ['query' => '   '])->assertSessionHasErrors();
+        [$record, $code] = $this->record();
+        $this->post(route('search.lookup'), $this->credentials($record, $code));
+        $replacement = CitizenAccess::issue($record, 'Ticket holder lost the original code.');
+        $this->get(route('search.results'))->assertRedirect(route('search'));
+        $this->post(route('search.lookup'), $this->credentials($record, $code))->assertSessionHasErrors('lookup');
+        $this->post(route('search.lookup'), $this->credentials($record, $replacement))->assertRedirect(route('search.results'));
+        $record->violator->delete();
+        $this->get(route('search.results'))->assertRedirect(route('search'));
     }
 
-    public function test_search_form_no_longer_asks_for_an_access_code(): void
+    public function test_legacy_public_sessions_and_records_without_codes_are_rejected(): void
     {
-        $this->get(route('search'))->assertOk()
-            ->assertSee("Full name (Last name, First name), licence number or plate number", false)
-            ->assertDontSee('access_code')
-            ->assertDontSee('Private access code');
+        [$record, $code] = $this->record();
+        $this->withSession(['public_record' => ['name' => 'citizen test', 'reference' => 'ABC123', 'expires' => now()->addMinutes(15)->timestamp]])
+            ->get(route('search.results'))->assertRedirect(route('search'));
+        $record->update(['public_access_hash' => null]);
+        $this->post(route('search.lookup'), $this->credentials($record, $code))->assertSessionHasErrors('lookup');
     }
 
-    public function test_citizen_can_search_by_licence_number(): void
+    public function test_public_lookup_is_rate_limited(): void
     {
-        $this->record('Licenced Driver', 'pending', 'N01-23-456789');
-        $this->post(route('search.lookup'), ['query' => 'N01-23-456789'])->assertRedirect(route('search.results'));
-        $this->get(route('search.results'))->assertOk()->assertSee('Not Yet Verified');
+        for ($i = 0; $i < 5; $i++) $this->post(route('search.lookup'), ['ticket_no' => 'unknown', 'access_code' => 'wrong'])->assertRedirect();
+        $this->post(route('search.lookup'), ['ticket_no' => 'unknown', 'access_code' => 'wrong'])->assertStatus(429);
     }
 
-    /** Licences are written inconsistently, so spacing, hyphens and case are ignored. */
-    public function test_licence_matching_ignores_hyphens_spacing_and_case(): void
+    public function test_staff_issuance_requires_ownership_identity_check_and_reason_and_displays_code_once(): void
     {
-        $this->record('Licenced Driver', 'pending', 'N01-23-456789');
-        foreach (['n0123456789', 'N01 23 456789', '  n01-23-456789  '] as $typed) {
-            $this->post(route('search.lookup'), ['query' => $typed])->assertRedirect(route('search.results'));
-            $this->get(route('search.results'))->assertOk()->assertSee('Not Yet Verified');
-        }
+        [$record, $oldCode] = $this->record();
+        $url = route('violations.citizen-access', $record);
+        $input = ['reason' => 'Identity verified at the POSO office.', 'identity_checked' => 1];
+        $this->post($url, $input)->assertRedirect(route('login'));
+        $this->actingAs($this->account())->post($url, $input)->assertForbidden();
+        $this->actingAs($record->officer)->post($url, ['reason' => 'short'])->assertSessionHasErrors(['reason', 'identity_checked']);
+        $this->post($url, $input)->assertRedirect(route('enforcer.show', $record));
+        $issued = session('citizen_access');
+        $this->assertNotSame($oldCode, $issued['code']);
+        $this->assertSame(hash('sha256', CitizenAccess::normalize($issued['code'])), $record->fresh()->public_access_hash);
+        $this->assertStringNotContainsString($issued['code'], AuditLog::latest('id')->first()->details);
+        $this->get(route('enforcer.show', $record))->assertOk()->assertSee($issued['code'])->assertHeader('Cache-Control', 'no-store, private');
+        $this->get(route('enforcer.show', $record))->assertOk()->assertDontSee($issued['code']);
+        $this->actingAs($this->account('admin'))->post($url, $input)->assertRedirect(route('violations.show', $record));
     }
 
-    /** A licence identifies one person, so it must not pull in a namesake's records. */
-    public function test_licence_search_returns_only_that_persons_records(): void
+    public function test_citizen_host_has_private_lookup_and_privacy_notice_and_blocks_staff_routes(): void
     {
-        $this->record('Shared Name', 'pending', 'AAA-111');
-
-        // A genuinely different person who happens to share the name.
-        $namesake = Violator::create(['full_name' => 'Shared Name', 'address' => 'Another address']);
-        $officer = User::create(['name' => 'Enforcer', 'username' => 'twin', 'email' => 'twin@example.test', 'password' => 'password', 'role' => 'enforcer']);
-        $twin = Violation::create(['violator_id' => $namesake->id, 'officer_id' => $officer->id, 'violation_type_id' => ViolationType::firstOrFail()->id, 'violation_date' => today()]);
-        Citation::create(['violation_id' => $twin->id, 'ticket_no' => Citation::generateTicketNo(), 'fine_amount' => 500, 'due_date' => today(), 'payment_status' => 'pending']);
-
-        $this->post(route('search.lookup'), ['query' => 'AAA-111']);
-        $this->get(route('search.results'))->assertOk()->assertDontSee('records were recorded under this name');
-
-        $this->post(route('search.lookup'), ['query' => 'Shared Name']);
-        $this->get(route('search.results'))->assertOk()->assertSee('2 records were recorded under this name');
+        [$record, $code] = $this->record('paid');
+        $this->get(route('citizen.search'))->assertOk()->assertSee('Private access code')->assertSee('TOP (ticket number)')->assertDontSee('name="query"', false);
+        $this->get(route('citizen.privacy'))->assertOk()->assertSee('Citizen portal privacy notice');
+        $this->post(route('citizen.lookup'), $this->credentials($record, $code))->assertRedirect(route('citizen.results'));
+        $this->get(route('citizen.results'))->assertOk()->assertSee('Settled');
+        $this->get('http://'.config('portals.citizen_domain').'/login')->assertNotFound();
+        $this->get('http://localhost/search/privacy')->assertOk();
     }
 
-    /** Violators without a licence must not all match one another on a blank value. */
-    public function test_violators_without_a_licence_do_not_match_each_other(): void
+    public function test_https_is_required_when_enabled(): void
     {
-        $this->record('Person Without Licence A');
-        $this->record('Person Without Licence B');
-
-        $this->assertNull(Violator::where('full_name', 'Person Without Licence A')->first()->normalized_license);
-        $this->post(route('search.lookup'), ['query' => 'Person Without Licence A']);
-        $this->get(route('search.results'))->assertOk()
-            ->assertDontSee('records were recorded under this name');
-    }
-
-    public function test_citizen_can_search_by_plate_number(): void
-    {
-        $this->record();   // fixture carries plate ABC-123
-        $this->post(route('search.lookup'), ['query' => 'ABC-123'])->assertRedirect(route('search.results'));
-        $this->get(route('search.results'))->assertOk()->assertSee('Not Yet Verified');
-    }
-
-    public function test_plate_matching_ignores_hyphens_spacing_and_case(): void
-    {
-        $this->record();
-        foreach (['abc123', 'ABC 123', '  abc-123  '] as $typed) {
-            $this->post(route('search.lookup'), ['query' => $typed])->assertRedirect(route('search.results'));
-            $this->get(route('search.results'))->assertOk()->assertSee('Not Yet Verified');
-        }
-    }
-
-    /** Blank plates must not make every plate-less violator match each other. */
-    public function test_violators_without_a_plate_do_not_match_each_other(): void
-    {
-        $bare = Violator::create(['full_name' => 'No Vehicle Person', 'address' => 'Somewhere']);
-        $this->assertNull($bare->fresh()->normalized_plate);
-        $this->assertNull($bare->fresh()->normalized_license);
-    }
-
-    public function test_login_has_public_search_link_and_does_not_display_default_credentials(): void
-    {
-        $this->get(route('login'))->assertOk()->assertSee('Welcome back')->assertSee('Check Settlement Status')->assertDontSee('Password for all');
+        config(['portals.require_https' => true, 'session.secure' => true]);
+        $this->get('http://portal.poso.test/')->assertStatus(308)->assertRedirect('https://portal.poso.test');
+        $this->get('https://portal.poso.test/')->assertOk()->assertHeader('Strict-Transport-Security', 'max-age=31536000');
     }
 }

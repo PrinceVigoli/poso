@@ -4,6 +4,8 @@ return [
     'offense_categories' => ['Traffic Violation', 'Peace and Order', 'Public Safety', 'Other Local Ordinance'],
     'allow_shared_receipts' => true,
     'citizen_domain' => env('CITIZEN_DOMAIN', 'portal.poso.test'),
+    'privacy_contact' => env('PRIVACY_CONTACT'),
+    'require_https' => env('REQUIRE_HTTPS', env('APP_ENV') === 'production'),
     // Violations, excluding dismissed ones, before a person is flagged as a
     // repeat offender. One value so the list, the profile and the dashboard
     // cannot drift apart. The office sets the number; there is no time window

@@ -163,6 +163,6 @@ class ArchitectureRemediationTest extends TestCase
         $v=$this->record(); $v->violator->update(['address'=>'Later profile address']);
         $response=$this->actingAs($this->account('admin'))->get(route('violations.show',$v))->assertOk()->assertSee('Incident address')->assertSee('Required fine')->assertSee('receipt_date',false);
         $response->assertDontSee('cdn.jsdelivr.net')->assertDontSee('fonts.googleapis.com')->assertDontSee('Later profile address');
-        $this->get(route('search'))->assertSee('Check Settlement Status')->assertSee('Results stay open for 15 minutes');
+        $this->get(route('search'))->assertSee('Check Settlement Status')->assertSee('Access closes after 15 minutes')->assertSee('Private access code');
     }
 }

@@ -18,6 +18,7 @@ Route::domain(config('portals.citizen_domain'))->middleware('throttle:20,1')->gr
     Route::post('/lookup', [SearchController::class, 'lookup'])->middleware('throttle:citizen-lookup')->name('citizen.lookup');
     Route::post('/forget', [SearchController::class, 'forget'])->name('citizen.forget');
     Route::get('/records', [SearchController::class, 'results'])->name('citizen.results');
+    Route::get('/privacy', [SearchController::class, 'privacy'])->name('citizen.privacy');
 });
 Route::view('/', 'landing')->name('home');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -30,6 +31,7 @@ Route::middleware('throttle:20,1')->group(function () {
     Route::post('/search/lookup', [SearchController::class, 'lookup'])->middleware('throttle:citizen-lookup')->name('search.lookup');
     Route::post('/search/forget', [SearchController::class, 'forget'])->name('search.forget');
     Route::get('/search/results', [SearchController::class, 'results'])->name('search.results');
+    Route::get('/search/privacy', [SearchController::class, 'privacy'])->name('search.privacy');
 });
 
 // ── Authenticated (all roles) ─────────────────────────────────
@@ -78,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
     // Viewing a single violation: admins can view any; the
     // controller restricts enforcers to only the ones they issued.
     Route::get('/violations/{violation}', [ViolationController::class, 'show'])->name('violations.show');
+    Route::post('/violations/{violation}/citizen-access', [\App\Http\Controllers\CitizenAccessController::class, 'store'])->middleware('throttle:10,1')->name('violations.citizen-access')->block();
     Route::get('/violations/{violation}/minor-photos/{photo}', [ViolationController::class, 'minorPhoto'])->whereNumber('photo')->name('violations.minor-photo');
 
     Route::middleware('role:enforcer')->prefix('enforcer')->name('enforcer.')->group(function () {

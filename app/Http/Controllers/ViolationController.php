@@ -239,7 +239,8 @@ class ViolationController extends Controller
         }
 
         try {
-            $violation = DB::transaction(function () use ($draft) {
+            $citizenCode = null;
+            $violation = DB::transaction(function () use ($draft, &$citizenCode) {
                 if (empty($draft['top_number']) || Citation::where('ticket_no', $draft['top_number'])->exists()) {
                     throw ValidationException::withMessages(['preview' => 'Please edit and enter an unused TOP ticket number.']);
                 }
@@ -271,6 +272,7 @@ class ViolationController extends Controller
                     'minor_photos' => $draft['minor_photos'] ?? [],
                 ]);
                 $this->issueCitation($violation, $type->id, $draft['top_number']);
+                $citizenCode = \App\Support\CitizenAccess::issue($violation, 'Issued with the confirmed ticket.');
                 AuditLog::record('created', 'violations', "Confirmed enforcer submission #{$violation->id} for violator ID {$violator->id}");
                 return $violation;
             });
@@ -284,7 +286,8 @@ class ViolationController extends Controller
         if ($request->session()->get('enforcer_preview.token') === $draft['token']) {
             $request->session()->forget(['enforcer_preview', 'enforcer_input']);
         }
-        return redirect()->route('enforcer.show', $violation)->with('success', 'Details confirmed. Violation recorded.');
+        return redirect()->route('enforcer.show', $violation)->with('success', 'Details confirmed. Violation recorded.')
+            ->with('citizen_access', ['record_id' => $violation->id, 'staff_id' => $request->user()->id, 'code' => $citizenCode]);
     }
 
     // Looks for existing violators with a similarly-spelled name (typo

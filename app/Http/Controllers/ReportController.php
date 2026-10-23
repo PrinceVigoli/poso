@@ -19,7 +19,7 @@ class ReportController extends Controller
 
     public function period(Request $request)
     {
-        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly,annual,custom', 'date' => 'nullable|date_format:Y-m-d', 'year' => 'nullable|integer|between:1900,9999', 'date_from' => 'required_if:period,custom|nullable|date_format:Y-m-d', 'date_to' => 'required_if:period,custom|nullable|date_format:Y-m-d|after_or_equal:date_from', 'download' => 'nullable|in:csv', 'type' => 'nullable|integer|exists:violation_types,id', 'payment_status' => 'nullable|in:paid,unpaid']);
+        $data = $request->validate(['period' => 'nullable|in:daily,weekly,monthly,annual,custom', 'date' => 'nullable|date_format:Y-m-d', 'year' => 'nullable|integer|between:1900,9999', 'date_from' => 'required_if:period,custom|nullable|date_format:Y-m-d', 'date_to' => 'required_if:period,custom|nullable|date_format:Y-m-d|after_or_equal:date_from', 'download' => 'nullable|in:csv', 'type' => 'nullable|integer|exists:violation_types,id', 'payment_status' => 'nullable|in:paid,unpaid,dismissed']);
         $period = $data['period'] ?? 'daily';
         $date = $data['date'] ?? today()->toDateString();
         $anchor = Carbon::parse($date);
@@ -46,7 +46,7 @@ class ReportController extends Controller
         $settlementsQuery = Violation::payable()->with(['violationType', 'citation'])
             ->whereHas('citation', fn ($q) => $q->where('payment_status', 'paid')->where('paid_at', '>=', $dateFrom)->where('paid_at', '<', $exclusiveEnd));
         $eventsQuery = \App\Models\PaymentEvent::with('user')->whereBetween('created_at', [$start, $end]);
-        $violationTypes = ViolationType::withTrashed()->orderBy('offense_name')->orderByDesc('id')->get()->unique('offense_key');
+        $violationTypes = ViolationType::orderBy('offense_name')->orderByDesc('id')->get()->unique('offense_key');
         $selectedType = !empty($data['type']) ? ViolationType::withTrashed()->findOrFail($data['type']) : null;
         $paymentStatus = $data['payment_status'] ?? '';
         $filter = function ($query) use ($selectedType, $paymentStatus) {
@@ -54,6 +54,10 @@ class ReportController extends Controller
                 $query->whereHas('violationType', fn ($q) => $q->where('offense_key', $selectedType->offense_key));
             }
             if ($paymentStatus) {
+                if ($paymentStatus === 'dismissed') {
+                    $query->where('status', 'dismissed');
+                    return;
+                }
                 $query->where('status', '!=', 'dismissed');
                 if ($paymentStatus === 'paid') {
                     $query->whereHas('citation', fn ($q) => $q->where('payment_status', 'paid'));

@@ -24,9 +24,11 @@ class PortalDomainsTest extends TestCase
         $user = \App\Models\User::create(['name' => 'Enforcer', 'username' => 'domain-user', 'email' => 'domain@example.test', 'password' => 'password', 'role' => 'enforcer']);
         $person = Violator::create(['full_name' => 'Domain Test Citizen', 'address' => 'Private address']);
         $v = \App\Models\Violation::create(['violator_id' => $person->id, 'officer_id' => $user->id, 'violation_type_id' => \App\Models\ViolationType::firstOrFail()->id, 'violation_date' => today()]);
+        \App\Models\Citation::create(['violation_id' => $v->id, 'ticket_no' => 'DOMAIN-TOP', 'fine_amount' => 500, 'due_date' => today(), 'payment_status' => 'pending']);
+        $code = \App\Support\CitizenAccess::issue($v, 'Issued for the domain test.');
         $this->get('http://portal.poso.test/')->assertOk()->assertViewIs('search.index')->assertDontSee('Staff sign in')->assertSee('action="http://portal.poso.test/lookup"', false);
         $this->get('http://portal.poso.test/?q=Domain')->assertOk()->assertDontSee('Domain Test Citizen');
-        $this->post('http://portal.poso.test/lookup', ['query' => $person->full_name])->assertRedirect('http://portal.poso.test/records');
+        $this->post('http://portal.poso.test/lookup', ['ticket_no' => 'DOMAIN-TOP', 'access_code' => $code])->assertRedirect('http://portal.poso.test/records');
         $this->get('http://portal.poso.test/records')->assertOk()->assertSee('Settlement status')->assertDontSee('Private address')->assertDontSee('Staff sign in');
     }
     public function test_citizen_host_does_not_expose_staff_pages(): void

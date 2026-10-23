@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(\App\Http\Middleware\PortalSecurity::class);
         $middleware->prependToGroup('web', \App\Http\Middleware\SeparateCitizenPortal::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountIsActive::class);
         $middleware->alias([
@@ -18,5 +19,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->dontFlash(['access_code']);
     })->create();

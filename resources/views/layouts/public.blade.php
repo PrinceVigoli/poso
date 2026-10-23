@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="referrer" content="no-referrer">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>POSO Luna &mdash; @yield('title', 'Citizen Portal')</title>
     <link rel="stylesheet" href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}">
@@ -25,7 +27,7 @@
     @elseif($isLogin)<a href="{{ route('citizen.search') }}" class="header-link">Check Settlement Status</a>@endif
 </div></header>
 <main id="public-content" class="public-content" tabindex="-1">@yield('content')</main>
-<footer class="public-footer">Public Order &amp; Safety Office &middot; Municipality of Luna</footer>
+<footer class="public-footer">Public Order &amp; Safety Office &middot; Municipality of Luna &middot; <a href="{{ route(request()->routeIs('citizen.*') ? 'citizen.privacy' : 'search.privacy') }}">Privacy notice</a></footer>
 @stack('scripts')
 </body>
 </html>

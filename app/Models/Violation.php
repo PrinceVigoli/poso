@@ -16,6 +16,7 @@ class Violation extends Model
     ];
 
     protected $casts = ['violation_date' => 'date', 'person_snapshot' => 'array', 'minor_photos' => 'array'];
+    protected $hidden = ['public_access_hash'];
 
     protected static function booted(): void
     {

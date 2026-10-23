@@ -2,6 +2,7 @@
 @section('title', 'Violation #' . $violation->id)
 
 @section('content')
+@include('violations._citizen_access')
 <div class="d-flex align-items-center gap-2 mb-3">
     <a href="{{ auth()->user()->isEnforcer() ? route('enforcer.create') : route('violations.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left" aria-hidden="true"></i><span class="visually-hidden">Back</span></a>
     <h5 class="mb-0">Violation Record #{{ $violation->id }}</h5>

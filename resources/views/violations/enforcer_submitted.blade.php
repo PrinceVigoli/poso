@@ -25,4 +25,5 @@
 </div>
 @if($violation->snapshot_source === 'legacy')<p class="text-muted small mt-3">Historical profile details were preserved from the available data; original incident details may be incomplete.</p>@endif
 @include('violations._minor_photos')
+@include('violations._citizen_access')
 @endsection

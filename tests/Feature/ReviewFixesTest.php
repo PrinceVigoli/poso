@@ -165,14 +165,17 @@ class ReviewFixesTest extends TestCase
             ->get(route('reports.index'))->assertRedirect(route('reports.period'));
     }
 
-    public function test_the_report_screen_selects_its_own_period(): void
+    public function test_the_report_screen_shows_from_and_to_dates_for_existing_period_links(): void
     {
         $this->actingAs($this->account('admin'));
 
         foreach (['daily', 'weekly', 'monthly'] as $period) {
             $this->get(route('reports.period', ['period' => $period]))->assertOk()
                 ->assertViewHas('period', $period)
-                ->assertSee('Report period');
+                ->assertSee('for="date_from">From', false)
+                ->assertSee('for="date_to">To', false)
+                ->assertSee('name="period" value="custom"', false)
+                ->assertDontSee('Date within the period');
         }
     }
 

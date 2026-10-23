@@ -12,6 +12,8 @@ The main Laragon virtual host already points at `C:/laragon/www/poso-portal/publ
 
 No separate Laravel server is needed for either domain when Apache is running. CSS, Bootstrap, icons and fonts are served locally. Run `npm run build` to validate asset references after changes; no Vite server is needed.
 
+Local HTTPS uses `poso-https.conf` in this directory, installed as `C:/laragon/etc/apache2/sites-enabled/poso-https.conf`. Its certificate and private key are stored outside the repository in `C:/laragon/etc/ssl/poso-portal.crt` and `poso-portal.key`. The certificate covers `poso-portal.test` and `portal.poso.test` and must be trusted in the browser user's Windows certificate store. With this configured, use `https://poso-portal.test/login` and `https://portal.poso.test/`. Set `APP_URL=https://poso-portal.test`, `REQUIRE_HTTPS=true`, `SESSION_SECURE_COOKIE=true`, `SESSION_ENCRYPT=true`, and `APP_DEBUG=false`. HTTP requests redirect to HTTPS. Certificate renewal is required before its one-year expiry; do not bypass browser certificate validation. Changing session encryption requires existing users to sign in again.
+
 For the alternative `php artisan serve` workflow, `http://127.0.0.1:8000/` serves the landing page and `/search` serves citizen search. The named citizen domain uses Apache on port 80.
 
 For hosting, point both domains to the same Laravel `public` directory, set `APP_URL` to the main site's HTTPS URL and `CITIZEN_DOMAIN` to the citizen hostname (without scheme or path), then rebuild Laravel's configuration and route caches. Configure DNS and TLS on the hosting provider. Keep session cookies scoped to each host.
