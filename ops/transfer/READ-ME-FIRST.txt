@@ -1,0 +1,89 @@
+POSO VIOLATION MONITORING SYSTEM
+Transfer package - read this first
+===================================================================
+
+WHAT THIS IS
+    A complete copy of the POSO portal: the application, its PHP
+    dependencies, and a snapshot of the database taken when the
+    package was made. The staff logins are the same as on the
+    machine this came from.
+
+
+BEFORE YOU START
+    1. Install Laragon Full from https://laragon.org
+       (the "lite" edition has no MySQL and will not work)
+    2. Open Laragon and click "Start All".
+       Apache and MySQL must both be green.
+
+
+INSTALL
+    1. Extract this whole ZIP somewhere - the Desktop is fine.
+       Do NOT extract it into C:\laragon\www\poso-portal.
+    2. Double-click INSTALL.bat.
+    3. Wait. It takes about a minute.
+
+    The installer works out where Laragon is, finds PHP and MySQL,
+    copies the application into C:\laragon\www\poso-portal, writes
+    the configuration file and loads the database. It prints the
+    address and the staff accounts when it finishes.
+
+
+AFTER IT FINISHES
+    http://poso-portal.test          landing page and ordinances
+    http://poso-portal.test/login    staff login
+
+    If that address does not open, right-click the Laragon window,
+    choose Apache > Reload, and try again. Failing that:
+
+        cd C:\laragon\www\poso-portal
+        php artisan serve
+
+    then open http://127.0.0.1:8000
+
+
+IF SOMETHING GOES WRONG
+    "Laragon was not found"
+        Install Laragon, or point the installer at it:
+        INSTALL.bat -LaragonRoot "D:\laragon"
+
+    "No PHP 8.3 or newer was found"
+        The portal needs PHP 8.3+. In Laragon: Menu > PHP > Version.
+
+    "Nothing is listening on 127.0.0.1:3306"
+        MySQL is not running. Click "Start All" in Laragon.
+
+    "Could not sign in to MySQL"
+        The installer tries the old machine's password, then the
+        usual Laragon defaults, then asks you. Laragon normally
+        leaves the root password empty.
+
+    An existing C:\laragon\www\poso-portal
+        It is renamed to poso-portal.replaced-<date>, never deleted.
+        Your old copy is still there if you need it back.
+
+
+RUNNING IT AGAIN
+    Safe. It renames the old folder and reloads the packaged
+    database over the top.
+
+    To install the application WITHOUT the packaged data - empty
+    system with only the demo accounts:
+
+        INSTALL.bat -FreshDatabase
+
+
+HANDLE WITH CARE
+    This package contains real violator records, the database
+    password and the application key. Treat the ZIP the way you
+    would treat the database itself: do not email it, do not put
+    it on a shared drive, delete it once the new machine works.
+
+
+WHAT IS NOT IN HERE
+    node_modules      not needed to run the portal
+    public/ordinances the scanned PDFs (54 MB). The ordinance text
+                      on the landing page is stored in the
+                      application itself, so nothing is missing
+                      from the site.
+    added docs        the original scans those PDFs came from
+    log files, caches and temporary files
