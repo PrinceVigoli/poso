@@ -3,9 +3,20 @@
 
 @section('content')
 <div class="card p-4" style="max-width:640px">
-    <form method="POST" action="{{ route('profile.update') }}">
+    <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
         @csrf
         @method('PUT')
+
+        <div class="mb-4">
+            <div class="mb-3">@include('partials.profile-avatar', ['avatarSize' => 88])</div>
+            <label class="form-label" for="profile_photo">Profile photo</label>
+            <input type="file" id="profile_photo" name="profile_photo" class="form-control @error('profile_photo') is-invalid @enderror" accept="image/jpeg,image/png,image/webp" aria-describedby="photo_help">
+            <div class="form-text" id="photo_help">JPG, PNG or WebP, up to 2 MB and 3000 × 3000 pixels. Your photo is cropped to a square and shown in a circle.</div>
+            @error('profile_photo')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            @if($user->profile_photo_path)
+                <div class="form-check mt-2"><input type="checkbox" name="remove_photo" value="1" id="remove_photo" class="form-check-input"><label for="remove_photo" class="form-check-label">Remove current photo</label></div>
+            @endif
+        </div>
 
         <div class="mb-4">
             <label class="form-label" for="profile_name">Full name <span class="text-danger">*</span></label>

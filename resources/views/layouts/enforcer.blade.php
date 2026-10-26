@@ -27,7 +27,7 @@
         <nav class="d-flex gap-3 mb-4" aria-label="Enforcer navigation"><a href="{{ route('enforcer.create') }}">Record violation</a><a href="{{ route('enforcer.index') }}">My submissions</a><a href="{{ route('profile.edit') }}">My profile</a></nav>
         @unless(request()->routeIs('enforcer.index'))@include('violations._enforcer_steps')@endunless
         <div class="enforcer-heading">
-            <p class="enforcer-account"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>{{ auth()->user()->name }} &middot; Enforcer</p>
+            <p class="enforcer-account">@include('partials.profile-avatar', ['avatarSize' => 32]) <span class="ms-2">{{ auth()->user()->name }} &middot; Enforcer</span></p>
             <h1>@yield('title', 'Record Violator')</h1>
         </div>
         @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif

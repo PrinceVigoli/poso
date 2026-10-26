@@ -35,15 +35,9 @@ try { if (localStorage.getItem('poso.sidebar') === 'collapsed') document.body.cl
             </button>
         </div>
         <p class="sb-location">Municipality of Luna, Apayao</p>
-        @php
-            $parts    = explode(' ', auth()->user()->name);
-            $initials = strtoupper(substr($parts[0],0,1)) . (isset($parts[1]) ? strtoupper(substr($parts[1],0,1)) : '');
-            $avColors = ['admin'=>['#E9F0F9','#0F3D73'],'enforcer'=>['#FBF3E1','#B8862E']];
-            $av = $avColors[auth()->user()->role] ?? ['#E9F0F9','#0F3D73'];
-        @endphp
         <a href="{{ route('profile.edit') }}" class="sb-user {{ request()->routeIs('profile.*') ? 'active' : '' }}"
            title="{{ auth()->user()->name }} — my profile">
-            <div class="sb-av" style="background:{{ $av[0] }};color:{{ $av[1] }}">{{ $initials }}</div>
+            @include('partials.profile-avatar', ['avatarClass' => 'sb-av'])
             <div class="sb-user-text">
                 <div class="sb-uname">{{ auth()->user()->name }}</div>
                 <div class="sb-urole">{{ ucfirst(auth()->user()->role) }}</div>

@@ -38,6 +38,7 @@ Route::middleware('throttle:20,1')->group(function () {
 Route::middleware(['auth'])->group(function () {
     // Every staff member manages their own name and password.
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Admins monitor records and verify Treasury payments.
