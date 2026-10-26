@@ -11,9 +11,9 @@
                     @foreach($group['members'] as $member)
                     <article class="directory-card">
                         @if(!empty($member['photo']))
-                            <img class="directory-photo" src="{{ asset($member['photo']) }}" alt="{{ $member['name'] }}" width="72" height="72" loading="lazy">
+                            <span class="directory-photo-frame"><img class="directory-photo" src="{{ asset($member['photo']) }}" alt="{{ $member['name'] }}" width="80" height="80" loading="lazy" style="object-position:50% {{ $member['photo_position'] ?? 25 }}%;transform:scale({{ $member['photo_zoom'] ?? 1 }});transform-origin:{{ $member['photo_origin_x'] ?? 50 }}% {{ $member['photo_origin'] ?? 50 }}%"></span>
                         @else
-                            <span class="directory-avatar">@include('partials.landing-icon', ['icon' => 'person'])</span>
+                            <span class="directory-avatar" aria-hidden="true"></span>
                         @endif
                         <div><h4>{{ $member['name'] }}</h4><p>{{ $member['position'] }}</p></div>
                     </article>
