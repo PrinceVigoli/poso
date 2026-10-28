@@ -28,7 +28,7 @@
 <section id="citizen-services" class="landing-steps" aria-labelledby="citizen-services-title">
     <div class="landing-section-heading"><div><p class="landing-eyebrow">AVAILABLE ONLINE SERVICE</p><h2 id="citizen-services-title">Violation record search</h2></div></div>
     <p class="landing-description">Use your TOP number and private access code to check one ticket's settlement status in the Citizen Portal. Contact POSO if you need a replacement code.</p>
-    <div class="landing-actions"><a class="btn btn-primary" href="{{ route('citizen.search') }}">Check my record @include('partials.landing-icon', ['icon' => 'arrow-up-right'])</a></div>
+    <div class="landing-actions"><a class="btn btn-primary" href="{{ \App\Support\CitizenPortal::searchUrl() }}">Check my record @include('partials.landing-icon', ['icon' => 'arrow-up-right'])</a></div>
     <p class="landing-no-account">@include('partials.landing-icon', ['icon' => 'check-circle']) No citizen account or sign in required</p>
 </section>
 <section id="how-it-works" class="landing-steps" aria-labelledby="steps-title">

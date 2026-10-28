@@ -24,7 +24,7 @@
     <a href="{{ route($isLanding || $isLogin ? 'home' : $searchRoute) }}" class="public-brand"><img src="{{ $__posoSeal }}" alt="Municipality of Luna seal"><span><strong>{{ $isLanding || $isLogin ? 'POSO' : 'POSO Citizen Portal' }}</strong><small>Luna, Apayao</small></span></a>
     @if($isLanding)
     <nav class="landing-nav" aria-label="Main navigation"><a href="#about-poso">About POSO</a><a href="#ordinances">Ordinances</a><a href="#staff-directory">Staff directory</a></nav>
-    @elseif($isLogin)<a href="{{ route('citizen.search') }}" class="header-link">Check Settlement Status</a>@endif
+    @elseif($isLogin)<a href="{{ \App\Support\CitizenPortal::searchUrl() }}" class="header-link">Check Settlement Status</a>@endif
 </div></header>
 <main id="public-content" class="public-content" tabindex="-1">@yield('content')</main>
 <footer class="public-footer">Public Order &amp; Safety Office &middot; Municipality of Luna &middot; <a href="{{ route(request()->routeIs('citizen.*') ? 'citizen.privacy' : 'search.privacy') }}">Privacy notice</a></footer>

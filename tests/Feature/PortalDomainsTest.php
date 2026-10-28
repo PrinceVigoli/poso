@@ -19,6 +19,21 @@ class PortalDomainsTest extends TestCase
         $this->get('http://localhost/search')->assertOk()->assertViewIs('search.index');
     }
 
+    public function test_local_record_links_stay_on_the_running_server(): void
+    {
+        foreach (['http://localhost:8000', 'http://127.0.0.1:8000'] as $origin) {
+            $landing = $this->get($origin.'/')->assertOk();
+            $landing->assertSee('href="'.$origin.'/search"', false);
+            $landing->assertDontSee('href="http://portal.poso.test:8000"', false);
+
+            $this->get($origin.'/search')->assertOk()->assertViewIs('search.index')
+                ->assertSee('action="'.$origin.'/search/lookup"', false)
+                ->assertSee('Private access code');
+            $this->get($origin.'/login')->assertOk()
+                ->assertSee('href="'.$origin.'/search"', false);
+        }
+    }
+
     public function test_citizen_host_keeps_search_links_and_records_on_its_domain(): void
     {
         $user = \App\Models\User::create(['name' => 'Enforcer', 'username' => 'domain-user', 'email' => 'domain@example.test', 'password' => 'password', 'role' => 'enforcer']);

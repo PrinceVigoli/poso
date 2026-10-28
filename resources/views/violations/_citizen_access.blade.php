@@ -6,7 +6,7 @@
             <p class="mb-1">Give this code privately to the ticket holder. It is shown once and cannot be retrieved.</p>
             <p class="mb-1"><strong>TOP:</strong> {{ $violation->citation?->ticket_no }}</p>
             <p class="mb-1"><strong>Private access code:</strong> <code class="user-select-all">{{ $issuedAccess['code'] }}</code></p>
-            <p class="mb-0"><strong>Citizen portal:</strong> {{ route('citizen.search') }}</p>
+            <p class="mb-0"><strong>Citizen portal:</strong> {{ \App\Support\CitizenPortal::searchUrl() }}</p>
         </div>
     @endif
     <p class="small text-muted">The citizen needs the TOP number and private code to see this ticket's status. Verify their identity and authority to receive access before issuing a replacement. Replacing the code immediately revokes the old code and open citizen sessions.</p>
